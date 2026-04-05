@@ -1,32 +1,33 @@
 import { HttpContext } from '@adonisjs/core/http'
-import Project from '#models/project'
+import Project, { ProjectStatus } from '#models/project'
 
 export default class ProjectsController {
   /**
-   * Display a list of projects
+   * Display paginated list of projects
    */
-  async index({ inertia }: HttpContext) {
-    const projects = await Project.all()
-    return inertia.render('projects/index', { projects })
-  }
+  async index({ inertia, request }: HttpContext) {
+    const page = request.input('page', 1)
+    const limit = 6
 
-  /**
-   * Get a specific project
-   */
-  async show({ params, response }: HttpContext) {
-    const project = await Project.find(params.id)
-    if (!project) {
-      return response.notFound({ message: 'Project not found' })
-    }
-    return response.json(project)
+    const projects = await Project.query()
+      .orderBy('created_at', 'desc')
+      .paginate(page, limit)
+
+    return inertia.render('projects/index', {
+      projects: projects.all(),
+      meta: projects.getMeta()
+    })
   }
 
   /**
    * Store a new project
    */
   async store({ request, response }: HttpContext) {
-    const data = request.only(['title', 'description'])
-    const project = await Project.create(data)
+    const data = request.only(['title', 'description', 'status'])
+    await Project.create({
+      ...data,
+      status: data.status || ProjectStatus.PENDING
+    })
     return response.redirect().back()
   }
 
@@ -39,7 +40,7 @@ export default class ProjectsController {
       return response.notFound({ message: 'Project not found' })
     }
 
-    const data = request.only(['title', 'description'])
+    const data = request.only(['title', 'description', 'status'])
     await project.merge(data).save()
     return response.redirect().back()
   }

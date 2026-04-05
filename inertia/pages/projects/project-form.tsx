@@ -5,6 +5,7 @@ interface ProjectFormProps {
   data: {
     title: string
     description: string
+    status: string
   }
   setData: (field: string, value: string) => void
   submit: (e: React.FormEvent) => void
@@ -43,6 +44,20 @@ export default function ProjectForm({ data, setData, submit, processing, handleK
             className="w-full px-4 py-3 bg-[#3A3A3C] text-white placeholder-[#98989D] rounded-lg border-none focus:ring-2 focus:ring-[#0A84FF] focus:outline-none min-h-[120px] transition-all duration-200"
             required
           />
+        </div>
+        {/* Status Dropdown */}
+        <div className="mb-4">
+          <motion.select
+            whileFocus={{ scale: 1.01 }}
+            transition={{ duration: 0.2 }}
+            value={data.status}
+            onChange={(e) => setData("status", e.target.value)}
+            className="w-full px-4 py-3 bg-[#3A3A3C] text-white rounded-lg border-none focus:ring-2 focus:ring-[#0A84FF] focus:outline-none transition-all duration-200"
+          >
+            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </motion.select>
         </div>
         <motion.button
           whileHover={{ scale: 1.02 }}

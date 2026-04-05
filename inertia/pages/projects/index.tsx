@@ -1,7 +1,7 @@
-import { Head, useForm, Link } from '@inertiajs/react'
+import { Head, useForm, Link, router } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
-import { PlusIcon, XIcon, ArrowLeft } from 'lucide-react'
+import { PlusIcon, XIcon, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import ProjectCard from './project-card'
 import ProjectForm from './project-form'
 import ViewSwitcher from './view-switcher'
@@ -10,20 +10,37 @@ interface Project {
   id: number;
   title: string;
   description: string;
+   status: 'pending' | 'in-progress' | 'completed';
   createdAt: string;
   updatedAt: string | null;
 }
 
+interface PaginationMeta {
+  total: number
+  perPage: number
+  currentPage: number
+  lastPage: number
+  firstPage: number
+}
+
+
 type ViewType = 'grid' | 'list'
 
-export default function Index({ projects: initialProjects }: { projects: Project[] }) {
+export default function Index({ projects: initialProjects, meta }: {  projects: Project[]
+  meta: PaginationMeta }) {
   const [projects, setProjects] = useState(initialProjects)
   const [isFormVisible, setIsFormVisible] = useState(false)
   const [viewType, setViewType] = useState<ViewType>('grid')
   const { data, setData, post, processing, reset } = useForm({
     title: '',
-    description: ''
+    description: '',
+    status: 'pending',
   });
+
+  // Update projects when page changes
+  useState(() => {
+    setProjects(initialProjects)
+  })
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +49,7 @@ export default function Index({ projects: initialProjects }: { projects: Project
       id: Date.now(),
       title: data.title,
       description: data.description,
+      status: data.status as 'pending' | 'in-progress' | 'completed',
       createdAt: new Date().toISOString(),
       updatedAt: null
     }
@@ -51,6 +69,10 @@ export default function Index({ projects: initialProjects }: { projects: Project
       submit(e as any);
     }
   };
+
+   const goToPage = (page: number) => {
+    router.get('/projects', { page }, { preserveScroll: true })
+  }
 
   return (
     <>
@@ -136,6 +158,55 @@ export default function Index({ projects: initialProjects }: { projects: Project
               ))}
             </AnimatePresence>
           </motion.div>
+
+          {/* ✅ Pagination Controls */}
+          {meta.lastPage > 1 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center justify-center gap-4 mt-8"
+            >
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => goToPage(meta.currentPage - 1)}
+                disabled={meta.currentPage === 1}
+                className="p-2 rounded-full bg-[#2C2C2E] hover:bg-[#3C3C3E] disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                <ChevronLeft size={20} />
+              </motion.button>
+
+              <div className="flex items-center gap-2">
+                {Array.from({ length: meta.lastPage }, (_, i) => i + 1).map((page) => (
+                  <motion.button
+                    key={page}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => goToPage(page)}
+                    className={`w-9 h-9 rounded-full text-sm font-medium transition-colors duration-200 ${
+                      page === meta.currentPage
+                        ? 'bg-[#0A84FF] text-white'
+                        : 'bg-[#2C2C2E] hover:bg-[#3C3C3E] text-white'
+                    }`}
+                  >
+                    {page}
+                  </motion.button>
+                ))}
+              </div>
+
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => goToPage(meta.currentPage + 1)}
+                disabled={meta.currentPage === meta.lastPage}
+                className="p-2 rounded-full bg-[#2C2C2E] hover:bg-[#3C3C3E] disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                <ChevronRight size={20} />
+              </motion.button>
+            </motion.div>
+          )}
+
+          {/* ✅ Page info */}
+          <p className="text-center text-sm text-[#98989D] mt-3">
+            Page {meta.currentPage} of {meta.lastPage} — {meta.total} projects total
+          </p>
         </div>
       </div>
     </>
