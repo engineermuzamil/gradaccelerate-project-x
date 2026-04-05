@@ -8,6 +8,7 @@
 */
 
 const NotesController = () => import('#controllers/notes_controller')
+const ProjectsController = () => import('#controllers/projects_controller')
 import router from '@adonisjs/core/services/router'
 
 router.get('/', ({ inertia }) => inertia.render('home'))
@@ -17,3 +18,8 @@ router.get('/notes', [NotesController, 'index'])
 router.post('/notes', [NotesController, 'store'])
 router.put('/notes/:id', [NotesController, 'update'])
 router.delete('/notes/:id', [NotesController, 'destroy'])
+
+router.get('/projects', [ProjectsController, 'index'])
+router.post('/projects', [ProjectsController, 'store'])
+router.put('/projects/:id', [ProjectsController, 'update'])
+router.delete('/projects/:id', [ProjectsController, 'destroy'])
