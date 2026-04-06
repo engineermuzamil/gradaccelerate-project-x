@@ -3,8 +3,10 @@ import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
 import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
+import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import Note from '#models/note'
+import Todo from '#models/todo'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -12,6 +14,8 @@ const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
 })
 
 export default class User extends compose(BaseModel, AuthFinder) {
+  static accessTokens = DbAccessTokensProvider.forModel(User)
+
   @column({ isPrimary: true })
   declare id: number
 
@@ -26,6 +30,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @hasMany(() => Note)
   declare notes: HasMany<typeof Note>
+
+  @hasMany(() => Todo)
+  declare todos: HasMany<typeof Todo>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

@@ -11,6 +11,7 @@ const NotesController = () => import('#controllers/notes_controller')
 const ProjectsController = () => import('#controllers/projects_controller')
 const TodosController = () => import('#controllers/todos_controller')
 const AuthController = () => import('#controllers/auth_controller')
+const TodoAuthController = () => import('#controllers/todo_auth_controller')
 import router from '@adonisjs/core/services/router'
 import { middleware } from './kernel.js'
 
@@ -33,9 +34,8 @@ router.group(() => {
 
 // Todo pages
 router.get('/todos', [TodosController, 'index'])
-router.post('/todos', [TodosController, 'store'])
-router.put('/todos/:id', [TodosController, 'update'])
-router.delete('/todos/:id', [TodosController, 'destroy'])
+router.get('/todos/login', ({ inertia }) => inertia.render('todos/login'))
+router.get('/todos/signup', ({ inertia }) => inertia.render('todos/signup'))
 
 // Protected notes routes
 router
@@ -56,6 +56,15 @@ router.put('/projects/:id', [ProjectsController, 'update'])
 router.delete('/projects/:id', [ProjectsController, 'destroy'])
 
 // Todo API routes
+router.group(() => {
+  router.post('/signup', [TodoAuthController, 'signup'])
+  router.post('/login', [TodoAuthController, 'login'])
+}).prefix('/api/auth/todos')
+
+router.group(() => {
+  router.post('/logout', [TodoAuthController, 'logout'])
+}).prefix('/api/auth/todos').use(middleware.auth({ guards: ['api'] }))
+
 router
   .group(() => {
     router.get('/', [TodosController, 'index'])
@@ -65,3 +74,4 @@ router
     router.delete('/:id', [TodosController, 'destroy'])
   })
   .prefix('/api/todos')
+  .use(middleware.auth({ guards: ['api'] }))

@@ -3,19 +3,28 @@ import Label from '#models/label'
 import Todo from '#models/todo'
 
 export default class TodosController {
-  async index({ request, response, inertia }: HttpContext) {
-    const todos = await Todo.query().preload('labels').orderBy('created_at', 'desc')
+  async index({ request, response, inertia, auth }: HttpContext) {
+    const isApiRequest = request.url().startsWith('/api/')
     const labels = await Label.query().orderBy('name', 'asc')
 
-    if (!request.url().startsWith('/api/')) {
-      return inertia.render('todos/index', { todos, labels })
+    if (!isApiRequest) {
+      return inertia.render('todos/index', { todos: [], labels })
     }
+
+    const todos = await Todo.query()
+      .where('user_id', auth.user!.id)
+      .preload('labels')
+      .orderBy('created_at', 'desc')
 
     return response.ok(todos)
   }
 
-  async show({ params, response }: HttpContext) {
-    const todo = await Todo.query().where('id', params.id).preload('labels').first()
+  async show({ params, response, auth }: HttpContext) {
+    const todo = await Todo.query()
+      .where('id', params.id)
+      .where('user_id', auth.user!.id)
+      .preload('labels')
+      .first()
     if (!todo) {
       return response.notFound({ message: 'Todo not found' })
     }
@@ -23,17 +32,20 @@ export default class TodosController {
     return response.ok(todo)
   }
 
-  async store({ request, response, session }: HttpContext) {
+  async store({ request, response, session, auth }: HttpContext) {
+    const isApiRequest = request.url().startsWith('/api/')
+
     const todo = await Todo.create({
       title: request.input('title'),
       description: request.input('description'),
       isCompleted: Boolean(request.input('isCompleted', false)),
+      userId: auth.user!.id,
     })
 
     await this.syncLabels(todo, request.input('labels', []))
     await todo.load('labels')
 
-    if (!request.url().startsWith('/api/')) {
+    if (!isApiRequest) {
       session.flash('success', 'Todo created successfully')
       return response.redirect().back()
     }
@@ -41,8 +53,12 @@ export default class TodosController {
     return response.created(todo)
   }
 
-  async update({ params, request, response, session }: HttpContext) {
-    const todo = await Todo.find(params.id)
+  async update({ params, request, response, session, auth }: HttpContext) {
+    const isApiRequest = request.url().startsWith('/api/')
+    const todo = await Todo.query()
+      .where('id', params.id)
+      .where('user_id', auth.user!.id)
+      .first()
     if (!todo) {
       return response.notFound({ message: 'Todo not found' })
     }
@@ -58,7 +74,7 @@ export default class TodosController {
     await this.syncLabels(todo, request.input('labels', []))
     await todo.load('labels')
 
-    if (!request.url().startsWith('/api/')) {
+    if (!isApiRequest) {
       session.flash('success', 'Todo updated successfully')
       return response.redirect().back()
     }
@@ -66,15 +82,19 @@ export default class TodosController {
     return response.ok(todo)
   }
 
-  async destroy({ params, request, response, session }: HttpContext) {
-    const todo = await Todo.find(params.id)
+  async destroy({ params, request, response, session, auth }: HttpContext) {
+    const isApiRequest = request.url().startsWith('/api/')
+    const todo = await Todo.query()
+      .where('id', params.id)
+      .where('user_id', auth.user!.id)
+      .first()
     if (!todo) {
       return response.notFound({ message: 'Todo not found' })
     }
 
     await todo.delete()
 
-    if (!request.url().startsWith('/api/')) {
+    if (!isApiRequest) {
       session.flash('success', 'Todo deleted successfully')
       return response.redirect().back()
     }

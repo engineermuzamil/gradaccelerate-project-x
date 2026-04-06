@@ -40,7 +40,7 @@ export default function Home() {
               <Link href="/todos" className="block">
                 <div className="bg-[#2C2C2E] p-6 rounded-xl hover:bg-[#3C3C3E] transition-colors duration-200">
                   <h2 className="text-2xl font-semibold mb-3">Todos</h2>
-                  <p className="text-gray-400">Keep track of your tasks and stay organized</p>
+                  <p className="text-gray-400">Keep track of your tasks with token-based auth</p>
                 </div>
               </Link>
 
