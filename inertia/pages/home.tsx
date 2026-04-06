@@ -1,7 +1,8 @@
 import { Head } from '@inertiajs/react'
-import { Link } from '@inertiajs/react'
+import { Link, usePage } from '@inertiajs/react'
 
 export default function Home() {
+  const { user } = usePage<{ user?: { id: number; fullName: string | null; email: string } | null }>().props
   return (
     <>
       <Head title="Race Track" />
@@ -21,6 +22,9 @@ export default function Home() {
             </svg>
 
             <h1 className="text-4xl font-bold mb-12">Welcome to Race Track</h1>
+            {user && (
+              <p className="text-[#98989D] mb-8">Logged in as {user.fullName || user.email}</p>
+            )}
 
             {/* Cards Container */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">

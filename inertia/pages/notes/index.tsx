@@ -21,9 +21,10 @@ interface Note {
 type ViewType = 'grid' | 'list'
 
 export default function Index() {
-  const { notes: initialNotes, labels: availableLabels, flash } = usePage<{
+  const { notes: initialNotes, labels: availableLabels, flash, user } = usePage<{
     notes: Note[]
     labels: { id: number; name: string }[]
+    user?: { id: number; fullName: string | null; email: string }
     flash?: { success?: string; error?: string; uploadedImageUrl?: string }
   }>().props
   const [notes, setNotes] = useState(initialNotes)
@@ -196,6 +197,19 @@ export default function Index() {
             </div>
             <div className="flex items-center gap-3">
               <ViewSwitcher currentView={viewType} onChange={setViewType} />
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  router.post('/auth/session/logout')
+                }}
+              >
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-[#2C2C2E] text-white border border-[#3A3A3C] hover:bg-[#3A3A3C] transition-colors duration-200"
+                >
+                  Logout
+                </button>
+              </form>
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
@@ -212,6 +226,11 @@ export default function Index() {
               </motion.button>
             </div>
           </motion.div>
+          {user && (
+            <p className="text-sm text-[#98989D] mb-6">
+              Logged in as {user.fullName || user.email}
+            </p>
+          )}
 
           <AnimatePresence>
             {isFormVisible && (
