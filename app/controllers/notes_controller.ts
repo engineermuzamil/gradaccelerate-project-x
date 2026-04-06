@@ -6,7 +6,8 @@ export default class NotesController {
    * Display a list of notes
    */
   async index({ inertia }: HttpContext) {
-    const notes = await Note.all()
+    const notes = await Note.query().orderBy('pinned', 'desc').orderBy('created_at', 'desc')
+
     return inertia.render('notes/index', { notes })
   }
 
@@ -18,6 +19,7 @@ export default class NotesController {
     if (!note) {
       return response.notFound({ message: 'Note not found' })
     }
+
     return response.json(note)
   }
 
@@ -25,8 +27,14 @@ export default class NotesController {
    * Store a new note
    */
   async store({ request, response }: HttpContext) {
-    const data = request.only(['title', 'content'])
-    const note = await Note.create(data)
+    const data = request.only(['title', 'content', 'pinned'])
+
+    await Note.create({
+      title: data.title,
+      content: data.content,
+      pinned: Boolean(data.pinned),
+    })
+
     return response.redirect().back()
   }
 
@@ -39,8 +47,15 @@ export default class NotesController {
       return response.notFound({ message: 'Note not found' })
     }
 
-    const data = request.only(['title', 'content'])
-    await note.merge(data).save()
+    const data = request.only(['title', 'content', 'pinned'])
+    await note
+      .merge({
+        title: data.title,
+        content: data.content,
+        pinned: Boolean(data.pinned),
+      })
+      .save()
+
     return response.redirect().back()
   }
 
@@ -56,4 +71,4 @@ export default class NotesController {
     await note.delete()
     return response.redirect().back()
   }
-} 
+}

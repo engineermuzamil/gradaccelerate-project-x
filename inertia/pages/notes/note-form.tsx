@@ -5,8 +5,9 @@ interface NoteFormProps {
   data: {
     title: string
     content: string
+    pinned: boolean
   }
-  setData: (field: string, value: string) => void
+  setData: (field: string, value: string | boolean) => void
   submit: (e: React.FormEvent) => void
   processing: boolean
   handleKeyDown: (e: React.KeyboardEvent) => void
@@ -44,6 +45,16 @@ export default function NoteForm({ data, setData, submit, processing, handleKeyD
             required
           />
         </div>
+        <p className="text-sm text-[#98989D] mb-4">Markdown is supported in note content.</p>
+        <label className="flex items-center gap-3 mb-4 text-sm text-white">
+          <input
+            type="checkbox"
+            checked={data.pinned}
+            onChange={(e) => setData("pinned", e.target.checked)}
+            className="h-4 w-4 rounded border-none accent-[#0A84FF]"
+          />
+          Pin this note
+        </label>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
