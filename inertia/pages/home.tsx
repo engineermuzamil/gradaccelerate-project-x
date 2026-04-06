@@ -39,6 +39,14 @@ export default function Home() {
                   <p className="text-gray-400">Keep track of your tasks and stay organized</p>
                 </div>
               </Link>
+
+              {/* Projects Card */}
+              <Link href="/projects" className="block">
+                <div className="bg-[#2C2C2E] p-6 rounded-xl hover:bg-[#3C3C3E] transition-colors duration-200">
+                  <h2 className="text-2xl font-semibold mb-3">Projects</h2>
+                  <p className="text-gray-400">Organize and manage your projects efficiently</p>
+                </div>
+              </Link>
             </div>
           </div>
         </div>

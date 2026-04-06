@@ -1,4 +1,4 @@
-import { Head, useForm, Link } from '@inertiajs/react'
+import { Head, useForm, Link, router, usePage } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import { PlusIcon, XIcon, ArrowLeft } from 'lucide-react'
@@ -7,50 +7,87 @@ import NoteForm from './note-form'
 import ViewSwitcher from './view-switcher'
 
 interface Note {
-  id: number;
-  title: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string | null;
+  id: number
+  title: string
+  content: string
+  pinned: boolean
+  createdAt: string
+  updatedAt: string | null
 }
 
 type ViewType = 'grid' | 'list'
 
-export default function Index({ notes: initialNotes }: { notes: Note[] }) {
+export default function Index() {
+  const { notes: initialNotes } = usePage<{ notes: Note[] }>().props
   const [notes, setNotes] = useState(initialNotes)
   const [isFormVisible, setIsFormVisible] = useState(false)
   const [viewType, setViewType] = useState<ViewType>('grid')
   const { data, setData, post, processing, reset } = useForm({
     title: '',
-    content: ''
-  });
+    content: '',
+    pinned: false,
+  })
 
   const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+    e.preventDefault()
+
     const newNote: Note = {
       id: Date.now(),
       title: data.title,
       content: data.content,
+      pinned: data.pinned,
       createdAt: new Date().toISOString(),
-      updatedAt: null
+      updatedAt: null,
     }
-    
+
     setNotes([newNote, ...notes])
-    
+
     post('/notes', {
       onSuccess: () => {
         reset()
         setIsFormVisible(false)
-      }
-    });
-  };
+      },
+    })
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-      submit(e as any);
+      submit(e as any)
     }
-  };
+  }
+
+  const togglePin = (id: number) => {
+    const noteToUpdate = notes.find((note) => note.id === id)
+    if (!noteToUpdate) {
+      return
+    }
+
+    const updatedPinned = !noteToUpdate.pinned
+
+    setNotes((currentNotes) =>
+      currentNotes
+        .map((note) => (note.id === id ? { ...note, pinned: updatedPinned } : note))
+        .sort((a, b) => {
+          if (a.pinned !== b.pinned) {
+            return a.pinned ? -1 : 1
+          }
+
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        })
+    )
+
+    router.put(
+      `/notes/${id}`,
+      {
+        title: noteToUpdate.title,
+        content: noteToUpdate.content,
+        pinned: updatedPinned,
+      },
+      {
+        preserveScroll: true,
+      }
+    )
+  }
 
   return (
     <>
@@ -130,7 +167,7 @@ export default function Index({ notes: initialNotes }: { notes: Note[] }) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
             className={viewType === 'grid' 
-              ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+              ? "columns-1 md:columns-2 gap-4"
               : "flex flex-col gap-3"
             }
           >
@@ -145,9 +182,9 @@ export default function Index({ notes: initialNotes }: { notes: Note[] }) {
                     transition: { delay: index * 0.05 }
                   }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className={viewType === 'list' ? 'w-full' : ''}
+                  className={viewType === 'grid' ? 'mb-4 break-inside-avoid' : 'w-full'}
                 >
-                  <NoteCard note={note} viewType={viewType} />
+                  <NoteCard note={note} viewType={viewType} onTogglePin={togglePin} />
                 </motion.div>
               ))}
             </AnimatePresence>
