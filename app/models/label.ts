@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, manyToMany } from '@adonisjs/lucid/orm'
 import type { ManyToMany } from '@adonisjs/lucid/types/relations'
+import Note from '#models/note'
 import Todo from '#models/todo'
 
 export default class Label extends BaseModel {
@@ -14,6 +15,11 @@ export default class Label extends BaseModel {
     pivotTable: 'todo_labels',
   })
   declare todos: ManyToMany<typeof Todo>
+
+  @manyToMany(() => Note, {
+    pivotTable: 'note_labels',
+  })
+  declare notes: ManyToMany<typeof Note>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

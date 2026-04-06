@@ -26,7 +26,8 @@ interface TodoCardProps {
 }
 
 export default function TodoCard({ todo, viewType, onEdit, onDelete, onToggleComplete }: TodoCardProps) {
-  const timeAgo = formatDistanceToNow(new Date(todo.createdAt), { addSuffix: true })
+  const createdAgo = formatDistanceToNow(new Date(todo.createdAt), { addSuffix: true })
+  const updatedAgo = todo.updatedAt ? formatDistanceToNow(new Date(todo.updatedAt), { addSuffix: true }) : null
 
   return (
     <motion.div
@@ -53,14 +54,13 @@ export default function TodoCard({ todo, viewType, onEdit, onDelete, onToggleCom
               <h2 className={`text-lg font-medium ${todo.isCompleted ? 'text-[#98989D] line-through' : 'text-white'}`}>
                 {todo.title}
               </h2>
-              <p className="text-xs text-[#98989D] mt-1">{timeAgo}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => onEdit(todo)} className="text-[#0A84FF] hover:text-[#3B9BFF] transition-colors duration-200">
+            <button type="button" onClick={() => onEdit(todo)} className="h-8 w-8 rounded-lg bg-[#3A3A3C] shadow-[0_6px_18px_rgba(0,0,0,0.2)] flex items-center justify-center text-[#0A84FF] hover:text-[#3B9BFF] transition-colors duration-200">
               <PencilIcon size={16} />
             </button>
-            <button type="button" onClick={() => onDelete(todo.id)} className="text-[#FF6B6B] hover:text-[#FF8787] transition-colors duration-200">
+            <button type="button" onClick={() => onDelete(todo.id)} className="h-8 w-8 rounded-lg bg-[#3A3A3C] shadow-[0_6px_18px_rgba(0,0,0,0.2)] flex items-center justify-center text-[#FF6B6B] hover:text-[#FF8787] transition-colors duration-200">
               <Trash2 size={16} />
             </button>
           </div>
@@ -79,6 +79,10 @@ export default function TodoCard({ todo, viewType, onEdit, onDelete, onToggleCom
             ))}
           </div>
         )}
+        <div className="text-xs text-[#98989D] mt-4 space-y-1">
+          <p>Created {createdAgo}</p>
+          {updatedAgo && <p>Updated {updatedAgo}</p>}
+        </div>
         </div>
       </div>
     </motion.div>

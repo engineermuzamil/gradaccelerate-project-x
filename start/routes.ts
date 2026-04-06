@@ -20,6 +20,7 @@ router.delete('/todos/:id', [TodosController, 'destroy'])
 
 router.get('/notes', [NotesController, 'index'])
 router.get('/notes/:id', [NotesController, 'show'])
+router.post('/notes/upload', [NotesController, 'uploadImage'])
 router.post('/notes', [NotesController, 'store'])
 router.put('/notes/:id', [NotesController, 'update'])
 router.delete('/notes/:id', [NotesController, 'destroy'])

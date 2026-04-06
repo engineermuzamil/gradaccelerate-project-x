@@ -1,6 +1,6 @@
 import { Head, useForm, Link, router, usePage } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PlusIcon, XIcon, ArrowLeft } from 'lucide-react'
 import FlashMessage from '../flash-message'
 import NoteCard from './note-card'
@@ -12,6 +12,8 @@ interface Note {
   title: string
   content: string
   pinned: boolean
+  imageUrl: string | null
+  labels: { id: number; name: string }[]
   createdAt: string
   updatedAt: string | null
 }
@@ -19,42 +21,120 @@ interface Note {
 type ViewType = 'grid' | 'list'
 
 export default function Index() {
-  const { notes: initialNotes, flash } = usePage<{ notes: Note[]; flash?: { success?: string; error?: string } }>().props
+  const { notes: initialNotes, labels: availableLabels, flash } = usePage<{
+    notes: Note[]
+    labels: { id: number; name: string }[]
+    flash?: { success?: string; error?: string; uploadedImageUrl?: string }
+  }>().props
   const [notes, setNotes] = useState(initialNotes)
   const [isFormVisible, setIsFormVisible] = useState(false)
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null)
   const [viewType, setViewType] = useState<ViewType>('grid')
-  const { data, setData, post, processing, reset } = useForm({
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const { data, setData, post, put, processing, reset } = useForm({
     title: '',
     content: '',
     pinned: false,
+    imageUrl: '',
+    labels: [] as number[],
   })
+
+  const sortNotes = (items: Note[]) =>
+    [...items].sort((a, b) => {
+      if (a.pinned !== b.pinned) {
+        return a.pinned ? -1 : 1
+      }
+
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
+
+  useEffect(() => {
+    setNotes(sortNotes(initialNotes))
+  }, [initialNotes])
+
+  useEffect(() => {
+    if (flash?.uploadedImageUrl) {
+      setData('imageUrl', flash.uploadedImageUrl)
+    }
+  }, [flash?.uploadedImageUrl])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (editingNoteId !== null) {
+      put(`/notes/${editingNoteId}`, {
+        onSuccess: () => {
+          resetForm()
+        },
+      })
+      return
+    }
 
     const newNote: Note = {
       id: Date.now(),
       title: data.title,
       content: data.content,
       pinned: data.pinned,
+      imageUrl: data.imageUrl || null,
+      labels: availableLabels.filter((label) => data.labels.includes(label.id)),
       createdAt: new Date().toISOString(),
       updatedAt: null,
     }
 
-    setNotes([newNote, ...notes])
+    setNotes((currentNotes) => sortNotes([newNote, ...currentNotes]))
 
     post('/notes', {
       onSuccess: () => {
-        reset()
-        setIsFormVisible(false)
+        resetForm()
       },
     })
+  }
+
+  const resetForm = () => {
+    reset()
+    setData('labels', [])
+    setData('imageUrl', '')
+    setEditingNoteId(null)
+    setIsFormVisible(false)
+  }
+
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+
+    setIsUploadingImage(true)
+
+    router.post(
+      '/notes/upload',
+      { image: file },
+      {
+        forceFormData: true,
+        preserveScroll: true,
+        preserveState: true,
+        onFinish: () => {
+          setIsUploadingImage(false)
+          event.target.value = ''
+        },
+      }
+    )
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       submit(e as any)
     }
+  }
+
+  const handleEdit = (note: Note) => {
+    setEditingNoteId(note.id)
+    setData('title', note.title)
+    setData('content', note.content)
+    setData('pinned', note.pinned)
+    setData('imageUrl', note.imageUrl || '')
+    setData('labels', note.labels.map((label) => label.id))
+    setIsFormVisible(true)
   }
 
   const togglePin = (id: number) => {
@@ -66,15 +146,7 @@ export default function Index() {
     const updatedPinned = !noteToUpdate.pinned
 
     setNotes((currentNotes) =>
-      currentNotes
-        .map((note) => (note.id === id ? { ...note, pinned: updatedPinned } : note))
-        .sort((a, b) => {
-          if (a.pinned !== b.pinned) {
-            return a.pinned ? -1 : 1
-          }
-
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        })
+      sortNotes(currentNotes.map((note) => (note.id === id ? { ...note, pinned: updatedPinned } : note)))
     )
 
     router.put(
@@ -83,6 +155,8 @@ export default function Index() {
         title: noteToUpdate.title,
         content: noteToUpdate.content,
         pinned: updatedPinned,
+        imageUrl: noteToUpdate.imageUrl || '',
+        labels: noteToUpdate.labels.map((label) => label.id),
       },
       {
         preserveScroll: true,
@@ -124,7 +198,14 @@ export default function Index() {
               <ViewSwitcher currentView={viewType} onChange={setViewType} />
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setIsFormVisible(!isFormVisible)}
+                onClick={() => {
+                  if (isFormVisible) {
+                    resetForm()
+                    return
+                  }
+
+                  setIsFormVisible(true)
+                }}
                 className="bg-[#0A84FF] text-white p-3 rounded-full shadow-lg hover:bg-[#0A74FF] transition-colors duration-200"
               >
                 {isFormVisible ? <XIcon size={20} /> : <PlusIcon size={20} />}
@@ -154,11 +235,15 @@ export default function Index() {
                 className="overflow-hidden mb-8"
               >
                 <NoteForm 
+                  labels={availableLabels}
                   data={data}
                   setData={setData}
+                  onImageChange={handleImageChange}
+                  isUploadingImage={isUploadingImage}
                   submit={submit}
                   processing={processing}
                   handleKeyDown={handleKeyDown}
+                  isEditing={editingNoteId !== null}
                 />
               </motion.div>
             )}
@@ -186,7 +271,12 @@ export default function Index() {
                   exit={{ opacity: 0, scale: 0.9 }}
                   className={viewType === 'grid' ? 'mb-4 break-inside-avoid' : 'w-full'}
                 >
-                  <NoteCard note={note} viewType={viewType} onTogglePin={togglePin} />
+                  <NoteCard
+                    note={note}
+                    viewType={viewType}
+                    onTogglePin={togglePin}
+                    onEdit={handleEdit}
+                  />
                 </motion.div>
               ))}
             </AnimatePresence>

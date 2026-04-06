@@ -1,9 +1,14 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
+import Label from '#models/label'
 import Note from '#models/note'
 
 export default class NoteSeeder extends BaseSeeder {
   async run() {
-    await Note.createMany([
+    const workLabel = await Label.firstOrCreate({ name: 'work' })
+    const ideasLabel = await Label.firstOrCreate({ name: 'ideas' })
+    const studyLabel = await Label.firstOrCreate({ name: 'study' })
+
+    const notes = await Note.createMany([
       {
         title: 'Project Highlights',
         content: `# GradAccelerate Features
@@ -27,6 +32,7 @@ export default class NoteSeeder extends BaseSeeder {
 
 > This is a blockquote example`,
         pinned: true,
+        imageUrl: null,
       },
       {
         title: 'Weekend Plans',
@@ -35,6 +41,7 @@ export default class NoteSeeder extends BaseSeeder {
 - Movie night
 - Cook dinner`,
         pinned: false,
+        imageUrl: null,
       },
       {
         title: 'Development Tips',
@@ -54,7 +61,12 @@ export default class NoteSeeder extends BaseSeeder {
 
 > Always write clean and maintainable code`,
         pinned: false,
+        imageUrl: null,
       },
     ])
+
+    await notes[0].related('labels').attach([workLabel.id, ideasLabel.id])
+    await notes[1].related('labels').attach([ideasLabel.id])
+    await notes[2].related('labels').attach([studyLabel.id, workLabel.id])
   }
 }
