@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 interface FlashMessageProps {
   flash?: {
     success?: string
@@ -6,7 +8,25 @@ interface FlashMessageProps {
 }
 
 export default function FlashMessage({ flash }: FlashMessageProps) {
-  if (!flash?.success && !flash?.error) {
+  const [visible, setVisible] = useState(Boolean(flash?.success || flash?.error))
+
+  useEffect(() => {
+    setVisible(Boolean(flash?.success || flash?.error))
+  }, [flash?.success, flash?.error])
+
+  useEffect(() => {
+    if (!visible) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setVisible(false)
+    }, 4000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [visible])
+
+  if (!visible || (!flash?.success && !flash?.error)) {
     return null
   }
 
