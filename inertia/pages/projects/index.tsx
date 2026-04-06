@@ -1,6 +1,6 @@
 import { Head, useForm, Link, router } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PlusIcon, XIcon, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import ProjectCard from './project-card'
 import ProjectForm from './project-form'
@@ -10,7 +10,7 @@ interface Project {
   id: number;
   title: string;
   description: string;
-   status: 'pending' | 'in-progress' | 'completed';
+  status: 'pending' | 'in-progress' | 'completed';
   createdAt: string;
   updatedAt: string | null;
 }
@@ -30,6 +30,7 @@ export default function Index({ projects: initialProjects, meta }: {  projects: 
   meta: PaginationMeta }) {
   const [projects, setProjects] = useState(initialProjects)
   const [isFormVisible, setIsFormVisible] = useState(false)
+  const [editingProjectId, setEditingProjectId] = useState<number | null>(null)
   const [viewType, setViewType] = useState<ViewType>('grid')
   const { data, setData, post, processing, reset } = useForm({
     title: '',
@@ -37,13 +38,23 @@ export default function Index({ projects: initialProjects, meta }: {  projects: 
     status: 'pending',
   });
 
-  // Update projects when page changes
-  useState(() => {
+  useEffect(() => {
     setProjects(initialProjects)
-  })
+  }, [initialProjects])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (editingProjectId !== null) {
+      router.put(`/projects/${editingProjectId}`, data, {
+        onSuccess: () => {
+          reset()
+          setEditingProjectId(null)
+          setIsFormVisible(false)
+        }
+      });
+      return
+    }
 
     const newProject: Project = {
       id: Date.now(),
@@ -72,6 +83,24 @@ export default function Index({ projects: initialProjects, meta }: {  projects: 
 
    const goToPage = (page: number) => {
     router.get('/projects', { page }, { preserveScroll: true })
+  }
+
+  const toggleForm = () => {
+    if (isFormVisible && editingProjectId !== null) {
+      reset()
+      setEditingProjectId(null)
+      setData('status', 'pending')
+    }
+
+    setIsFormVisible(!isFormVisible)
+  }
+
+  const handleEdit = (project: Project) => {
+    setEditingProjectId(project.id)
+    setData('title', project.title)
+    setData('description', project.description)
+    setData('status', project.status)
+    setIsFormVisible(true)
   }
 
   return (
@@ -107,7 +136,7 @@ export default function Index({ projects: initialProjects, meta }: {  projects: 
               <ViewSwitcher currentView={viewType} onChange={setViewType} />
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setIsFormVisible(!isFormVisible)}
+                onClick={toggleForm}
                 className="bg-[#0A84FF] text-white p-3 rounded-full shadow-lg hover:bg-[#0A74FF] transition-colors duration-200"
               >
                 {isFormVisible ? <XIcon size={20} /> : <PlusIcon size={20} />}
@@ -130,6 +159,7 @@ export default function Index({ projects: initialProjects, meta }: {  projects: 
                   submit={submit}
                   processing={processing}
                   handleKeyDown={handleKeyDown}
+                  isEditing={editingProjectId !== null}
                 />
               </motion.div>
             )}
@@ -153,7 +183,7 @@ export default function Index({ projects: initialProjects, meta }: {  projects: 
                   exit={{ opacity: 0, scale: 0.9 }}
                   className={viewType === 'list' ? 'w-full' : ''}
                 >
-                  <ProjectCard project={project} viewType={viewType} />
+                  <ProjectCard project={project} viewType={viewType} onEdit={handleEdit} />
                 </motion.div>
               ))}
             </AnimatePresence>

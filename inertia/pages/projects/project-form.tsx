@@ -11,15 +11,16 @@ interface ProjectFormProps {
   submit: (e: React.FormEvent) => void
   processing: boolean
   handleKeyDown: (e: React.KeyboardEvent) => void
+  isEditing: boolean
 }
 
-export default function ProjectForm({ data, setData, submit, processing, handleKeyDown }: ProjectFormProps) {
+export default function ProjectForm({ data, setData, submit, processing, handleKeyDown, isEditing }: ProjectFormProps) {
   return (
     <motion.div
       className="bg-[#2C2C2E] rounded-xl p-6 backdrop-blur-lg border border-[#3A3A3C]"
       style={{ boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)" }}
     >
-      <h2 className="text-xl font-semibold text-white mb-4">New Project</h2>
+      <h2 className="text-xl font-semibold text-white mb-4">{isEditing ? "Edit Project" : "New Project"}</h2>
       <form onSubmit={submit}>
         <div className="mb-4">
           <motion.input
@@ -66,10 +67,10 @@ export default function ProjectForm({ data, setData, submit, processing, handleK
           disabled={processing}
           className="w-full bg-[#0A84FF] text-white px-4 py-3 rounded-lg hover:bg-[#0A74FF] focus:outline-none focus:ring-2 focus:ring-[#0A84FF] focus:ring-offset-2 focus:ring-offset-[#2C2C2E] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
-          {processing ? "Adding..." : "Add Project"}
+          {processing ? (isEditing ? "Saving..." : "Adding...") : (isEditing ? "Save Project" : "Add Project")}
         </motion.button>
         <p className="text-center text-sm text-[#98989D] mt-2">
-          Hit {navigator.platform?.includes("Mac") ? "⌘" : "Ctrl"} + Enter to add project
+          Hit {navigator.platform?.includes("Mac") ? "⌘" : "Ctrl"} + Enter to {isEditing ? "save" : "add"} project
         </p>
       </form>
     </motion.div>

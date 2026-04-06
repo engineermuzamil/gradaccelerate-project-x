@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
+import { PencilIcon } from 'lucide-react'
 
 interface Project {
   id: number;
@@ -13,6 +14,7 @@ interface Project {
 interface ProjectCardProps {
   project: Project
   viewType: 'grid' | 'list'
+  onEdit: (project: Project) => void
 }
 
 const statusConfig = {
@@ -21,7 +23,7 @@ const statusConfig = {
   'completed': { label: 'Completed', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
 }
 
-export default function ProjectCard({ project, viewType }: ProjectCardProps) {
+export default function ProjectCard({ project, viewType, onEdit }: ProjectCardProps) {
   const timeAgo = formatDistanceToNow(new Date(project.createdAt), { addSuffix: true })
   const status = statusConfig[project.status]
 
@@ -39,7 +41,16 @@ export default function ProjectCard({ project, viewType }: ProjectCardProps) {
         <div className={viewType === 'list' ? 'flex-1' : ''}>
           <div className="flex justify-between items-start mb-2">
             <h2 className="text-lg font-medium text-white">{project.title}</h2>
-            <span className="text-xs text-[#98989D]">{timeAgo}</span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => onEdit(project)}
+                className="text-[#0A84FF] hover:text-[#3B9BFF] transition-colors duration-200"
+              >
+                <PencilIcon size={16} />
+              </button>
+              <span className="text-xs text-[#98989D]">{timeAgo}</span>
+            </div>
           </div>
           <p className={`text-[#98989D] text-sm mb-3 ${viewType === 'grid' ? 'line-clamp-3' : 'line-clamp-1'}`}>
             {project.description}
