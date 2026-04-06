@@ -2,6 +2,7 @@ import { Head, useForm, Link, router, usePage } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { PlusIcon, XIcon, ArrowLeft } from 'lucide-react'
+import FlashMessage from '../flash-message'
 import TodoCard from './todo-card'
 import TodoForm from './todo-form'
 import ViewSwitcher from './view-switcher'
@@ -24,7 +25,7 @@ interface Todo {
 type ViewType = 'grid' | 'list'
 
 export default function Todos() {
-  const { todos: initialTodos, labels: availableLabels } = usePage<{ todos: Todo[]; labels: Label[] }>().props
+  const { todos: initialTodos, labels: availableLabels, flash } = usePage<{ todos: Todo[]; labels: Label[]; flash?: { success?: string; error?: string } }>().props
   const [todos, setTodos] = useState(initialTodos)
   const [isFormVisible, setIsFormVisible] = useState(false)
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
@@ -124,6 +125,7 @@ export default function Todos() {
       <Head title="Todos" />
       <div className="min-h-screen bg-[#1C1C1E] text-white">
         <div className="max-w-4xl mx-auto p-6">
+          <FlashMessage flash={flash} />
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}

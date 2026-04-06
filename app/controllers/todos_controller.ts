@@ -23,7 +23,7 @@ export default class TodosController {
     return response.ok(todo)
   }
 
-  async store({ request, response }: HttpContext) {
+  async store({ request, response, session }: HttpContext) {
     const todo = await Todo.create({
       title: request.input('title'),
       description: request.input('description'),
@@ -34,13 +34,14 @@ export default class TodosController {
     await todo.load('labels')
 
     if (!request.url().startsWith('/api/')) {
+      session.flash('success', 'Todo created successfully')
       return response.redirect().back()
     }
 
     return response.created(todo)
   }
 
-  async update({ params, request, response }: HttpContext) {
+  async update({ params, request, response, session }: HttpContext) {
     const todo = await Todo.find(params.id)
     if (!todo) {
       return response.notFound({ message: 'Todo not found' })
@@ -58,13 +59,14 @@ export default class TodosController {
     await todo.load('labels')
 
     if (!request.url().startsWith('/api/')) {
+      session.flash('success', 'Todo updated successfully')
       return response.redirect().back()
     }
 
     return response.ok(todo)
   }
 
-  async destroy({ params, request, response }: HttpContext) {
+  async destroy({ params, request, response, session }: HttpContext) {
     const todo = await Todo.find(params.id)
     if (!todo) {
       return response.notFound({ message: 'Todo not found' })
@@ -73,6 +75,7 @@ export default class TodosController {
     await todo.delete()
 
     if (!request.url().startsWith('/api/')) {
+      session.flash('success', 'Todo deleted successfully')
       return response.redirect().back()
     }
 

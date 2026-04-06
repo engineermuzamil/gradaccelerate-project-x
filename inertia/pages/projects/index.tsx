@@ -1,7 +1,8 @@
-import { Head, useForm, Link, router } from '@inertiajs/react'
+import { Head, useForm, Link, router, usePage } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { PlusIcon, XIcon, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
+import FlashMessage from '../flash-message'
 import ProjectCard from './project-card'
 import ProjectForm from './project-form'
 import ViewSwitcher from './view-switcher'
@@ -28,6 +29,7 @@ type ViewType = 'grid' | 'list'
 
 export default function Index({ projects: initialProjects, meta }: {  projects: Project[]
   meta: PaginationMeta }) {
+  const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props
   const [projects, setProjects] = useState(initialProjects)
   const [isFormVisible, setIsFormVisible] = useState(false)
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null)
@@ -108,6 +110,7 @@ export default function Index({ projects: initialProjects, meta }: {  projects: 
       <Head title="Projects" />
       <div className="min-h-screen bg-[#1C1C1E] text-white">
         <div className="max-w-4xl mx-auto p-6">
+          <FlashMessage flash={flash} />
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}

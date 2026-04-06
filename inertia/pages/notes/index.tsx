@@ -2,6 +2,7 @@ import { Head, useForm, Link, router, usePage } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import { PlusIcon, XIcon, ArrowLeft } from 'lucide-react'
+import FlashMessage from '../flash-message'
 import NoteCard from './note-card'
 import NoteForm from './note-form'
 import ViewSwitcher from './view-switcher'
@@ -18,7 +19,7 @@ interface Note {
 type ViewType = 'grid' | 'list'
 
 export default function Index() {
-  const { notes: initialNotes } = usePage<{ notes: Note[] }>().props
+  const { notes: initialNotes, flash } = usePage<{ notes: Note[]; flash?: { success?: string; error?: string } }>().props
   const [notes, setNotes] = useState(initialNotes)
   const [isFormVisible, setIsFormVisible] = useState(false)
   const [viewType, setViewType] = useState<ViewType>('grid')
@@ -94,6 +95,7 @@ export default function Index() {
       <Head title="Notes" />
       <div className="min-h-screen bg-[#1C1C1E] text-white">
         <div className="max-w-4xl mx-auto p-6">
+          <FlashMessage flash={flash} />
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}

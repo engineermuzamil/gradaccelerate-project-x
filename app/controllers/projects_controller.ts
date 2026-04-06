@@ -22,19 +22,20 @@ export default class ProjectsController {
   /**
    * Store a new project
    */
-  async store({ request, response }: HttpContext) {
+  async store({ request, response, session }: HttpContext) {
     const data = request.only(['title', 'description', 'status'])
     await Project.create({
       ...data,
       status: data.status || ProjectStatus.PENDING
     })
+    session.flash('success', 'Project created successfully')
     return response.redirect().back()
   }
 
   /**
    * Update a project
    */
-  async update({ params, request, response }: HttpContext) {
+  async update({ params, request, response, session }: HttpContext) {
     const project = await Project.find(params.id)
     if (!project) {
       return response.notFound({ message: 'Project not found' })
@@ -42,19 +43,21 @@ export default class ProjectsController {
 
     const data = request.only(['title', 'description', 'status'])
     await project.merge(data).save()
+    session.flash('success', 'Project updated successfully')
     return response.redirect().back()
   }
 
   /**
    * Delete a project
    */
-  async destroy({ params, response }: HttpContext) {
+  async destroy({ params, response, session }: HttpContext) {
     const project = await Project.find(params.id)
     if (!project) {
       return response.notFound({ message: 'Project not found' })
     }
 
     await project.delete()
+    session.flash('success', 'Project deleted successfully')
     return response.redirect().back()
   }
 }

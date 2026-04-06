@@ -26,7 +26,7 @@ export default class NotesController {
   /**
    * Store a new note
    */
-  async store({ request, response }: HttpContext) {
+  async store({ request, response, session }: HttpContext) {
     const data = request.only(['title', 'content', 'pinned'])
 
     await Note.create({
@@ -35,13 +35,14 @@ export default class NotesController {
       pinned: Boolean(data.pinned),
     })
 
+    session.flash('success', 'Note created successfully')
     return response.redirect().back()
   }
 
   /**
    * Update a note
    */
-  async update({ params, request, response }: HttpContext) {
+  async update({ params, request, response, session }: HttpContext) {
     const note = await Note.find(params.id)
     if (!note) {
       return response.notFound({ message: 'Note not found' })
@@ -56,19 +57,21 @@ export default class NotesController {
       })
       .save()
 
+    session.flash('success', 'Note updated successfully')
     return response.redirect().back()
   }
 
   /**
    * Delete a note
    */
-  async destroy({ params, response }: HttpContext) {
+  async destroy({ params, response, session }: HttpContext) {
     const note = await Note.find(params.id)
     if (!note) {
       return response.notFound({ message: 'Note not found' })
     }
 
     await note.delete()
+    session.flash('success', 'Note deleted successfully')
     return response.redirect().back()
   }
 }
