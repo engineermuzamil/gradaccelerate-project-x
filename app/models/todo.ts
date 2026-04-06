@@ -3,7 +3,7 @@ import { BaseModel, column, manyToMany } from '@adonisjs/lucid/orm'
 import type { ManyToMany } from '@adonisjs/lucid/types/relations'
 import Label from '#models/label'
 
-export default class Note extends BaseModel {
+export default class Todo extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
 
@@ -11,16 +11,13 @@ export default class Note extends BaseModel {
   declare title: string
 
   @column()
-  declare content: string
+  declare description: string | null
 
-  @column()
-  declare pinned: boolean
-
-  @column({ columnName: 'image_url' })
-  declare imageUrl: string | null
+  @column({ columnName: 'is_completed' })
+  declare isCompleted: boolean
 
   @manyToMany(() => Label, {
-    pivotTable: 'note_labels',
+    pivotTable: 'todo_labels',
   })
   declare labels: ManyToMany<typeof Label>
 

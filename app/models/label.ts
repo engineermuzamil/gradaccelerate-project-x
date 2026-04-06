@@ -1,28 +1,25 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, manyToMany } from '@adonisjs/lucid/orm'
 import type { ManyToMany } from '@adonisjs/lucid/types/relations'
-import Label from '#models/label'
+import Note from '#models/note'
+import Todo from '#models/todo'
 
-export default class Note extends BaseModel {
+export default class Label extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
 
   @column()
-  declare title: string
+  declare name: string
 
-  @column()
-  declare content: string
+  @manyToMany(() => Todo, {
+    pivotTable: 'todo_labels',
+  })
+  declare todos: ManyToMany<typeof Todo>
 
-  @column()
-  declare pinned: boolean
-
-  @column({ columnName: 'image_url' })
-  declare imageUrl: string | null
-
-  @manyToMany(() => Label, {
+  @manyToMany(() => Note, {
     pivotTable: 'note_labels',
   })
-  declare labels: ManyToMany<typeof Label>
+  declare notes: ManyToMany<typeof Note>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

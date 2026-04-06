@@ -24,7 +24,8 @@ const statusConfig = {
 }
 
 export default function ProjectCard({ project, viewType, onEdit }: ProjectCardProps) {
-  const timeAgo = formatDistanceToNow(new Date(project.createdAt), { addSuffix: true })
+  const createdAgo = formatDistanceToNow(new Date(project.createdAt), { addSuffix: true })
+  const updatedAgo = project.updatedAt ? formatDistanceToNow(new Date(project.updatedAt), { addSuffix: true }) : null
   const status = statusConfig[project.status]
 
   return (
@@ -45,11 +46,10 @@ export default function ProjectCard({ project, viewType, onEdit }: ProjectCardPr
               <button
                 type="button"
                 onClick={() => onEdit(project)}
-                className="text-[#0A84FF] hover:text-[#3B9BFF] transition-colors duration-200"
+                className="h-8 w-8 rounded-lg bg-[#3A3A3C] shadow-[0_6px_18px_rgba(0,0,0,0.2)] flex items-center justify-center text-[#0A84FF] hover:text-[#3B9BFF] transition-colors duration-200"
               >
                 <PencilIcon size={16} />
               </button>
-              <span className="text-xs text-[#98989D]">{timeAgo}</span>
             </div>
           </div>
           <p className={`text-[#98989D] text-sm mb-3 ${viewType === 'grid' ? 'line-clamp-3' : 'line-clamp-1'}`}>
@@ -59,6 +59,10 @@ export default function ProjectCard({ project, viewType, onEdit }: ProjectCardPr
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${status.color}`}>
             {status.label}
           </span>
+          <div className="text-xs text-[#98989D] mt-4 space-y-1">
+            <p>Created {createdAgo}</p>
+            {updatedAgo && <p>Updated {updatedAgo}</p>}
+          </div>
         </div>
       </div>
 

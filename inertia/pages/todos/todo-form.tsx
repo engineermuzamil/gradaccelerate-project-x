@@ -1,44 +1,39 @@
 import type React from "react"
 import { motion } from "framer-motion"
 
-interface NoteFormProps {
+interface TodoFormProps {
   labels: {
     id: number
     name: string
   }[]
   data: {
     title: string
-    content: string
-    pinned: boolean
-    imageUrl: string
+    description: string
+    isCompleted: boolean
     labels: number[]
   }
   setData: (field: string, value: string | boolean | number[]) => void
-  onImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void
-  isUploadingImage: boolean
   submit: (e: React.FormEvent) => void
   processing: boolean
   handleKeyDown: (e: React.KeyboardEvent) => void
   isEditing: boolean
 }
 
-export default function NoteForm({
+export default function TodoForm({
   labels,
   data,
   setData,
-  onImageChange,
-  isUploadingImage,
   submit,
   processing,
   handleKeyDown,
   isEditing,
-}: NoteFormProps) {
+}: TodoFormProps) {
   return (
     <motion.div
       className="bg-[#2C2C2E] rounded-xl p-6 backdrop-blur-lg border border-[#3A3A3C]"
       style={{ boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)" }}
     >
-      <h2 className="text-xl font-semibold text-white mb-4">{isEditing ? "Edit Note" : "New Note"}</h2>
+      <h2 className="text-xl font-semibold text-white mb-4">{isEditing ? "Edit Todo" : "New Todo"}</h2>
       <form onSubmit={submit}>
         <div className="mb-4">
           <motion.input
@@ -47,7 +42,7 @@ export default function NoteForm({
             type="text"
             value={data.title}
             onChange={(e) => setData("title", e.target.value)}
-            placeholder="Note title"
+            placeholder="Todo title"
             className="w-full px-4 py-3 bg-[#3A3A3C] text-white placeholder-[#98989D] rounded-lg border-none focus:ring-2 focus:ring-[#0A84FF] focus:outline-none transition-all duration-200"
             required
           />
@@ -56,15 +51,13 @@ export default function NoteForm({
           <motion.textarea
             whileFocus={{ scale: 1.01 }}
             transition={{ duration: 0.2 }}
-            value={data.content}
-            onChange={(e) => setData("content", e.target.value)}
+            value={data.description}
+            onChange={(e) => setData("description", e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Note content"
+            placeholder="Todo description"
             className="w-full px-4 py-3 bg-[#3A3A3C] text-white placeholder-[#98989D] rounded-lg border-none focus:ring-2 focus:ring-[#0A84FF] focus:outline-none min-h-[120px] transition-all duration-200"
-            required
           />
         </div>
-        <p className="text-sm text-[#98989D] mb-4">Markdown is supported in note content.</p>
         <div className="mb-4">
           <p className="text-sm font-medium text-white mb-3">Labels</p>
           <div className="flex flex-wrap gap-3">
@@ -95,41 +88,25 @@ export default function NoteForm({
             })}
           </div>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-white mb-3">Image</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onImageChange}
-            className="block w-full text-sm text-[#E5E5EA] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#0A84FF] file:text-white hover:file:bg-[#0A74FF]"
-          />
-          {isUploadingImage && <p className="text-sm text-[#98989D] mt-2">Uploading image...</p>}
-          {data.imageUrl && (
-            <img src={data.imageUrl} alt="Note upload preview" className="mt-3 w-full max-h-48 object-cover rounded-lg border border-[#3A3A3C]" />
-          )}
-        </div>
         <label className="flex items-center gap-3 mb-4 text-sm text-white">
           <input
             type="checkbox"
-            checked={data.pinned}
-            onChange={(e) => setData("pinned", e.target.checked)}
+            checked={data.isCompleted}
+            onChange={(e) => setData("isCompleted", e.target.checked)}
             className="h-4 w-4 rounded border-none accent-[#0A84FF]"
           />
-          Pin this note
+          Mark as completed
         </label>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
-          disabled={processing || isUploadingImage}
+          disabled={processing}
           className="w-full bg-[#0A84FF] text-white px-4 py-3 rounded-lg hover:bg-[#0A74FF] focus:outline-none focus:ring-2 focus:ring-[#0A84FF] focus:ring-offset-2 focus:ring-offset-[#2C2C2E] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
-          {processing ? (isEditing ? "Saving..." : "Adding...") : (isEditing ? "Save Note" : "Add Note")}
+          {processing ? (isEditing ? "Saving..." : "Adding...") : (isEditing ? "Save Todo" : "Add Todo")}
         </motion.button>
-        <p className="text-center text-sm text-[#98989D] mt-2">
-          Hit {navigator.platform?.includes("Mac") ? "⌘" : "Ctrl"} + Enter to {isEditing ? "save" : "add"} note
-        </p>
       </form>
     </motion.div>
   )
-} 
+}
