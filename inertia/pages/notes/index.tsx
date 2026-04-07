@@ -13,6 +13,7 @@ interface Note {
   content: string
   pinned: boolean
   imageUrl: string | null
+  sharedToken?: string | null
   labels: { id: number; name: string }[]
   createdAt: string
   updatedAt: string | null
@@ -25,7 +26,7 @@ export default function Index() {
     notes: Note[]
     labels: { id: number; name: string }[]
     user?: { id: number; fullName: string | null; email: string }
-    flash?: { success?: string; error?: string; uploadedImageUrl?: string }
+    flash?: { success?: string; error?: string; uploadedImageUrl?: string; sharedNoteUrl?: string }
   }>().props
   const [notes, setNotes] = useState(initialNotes)
   const [isFormVisible, setIsFormVisible] = useState(false)
@@ -58,6 +59,16 @@ export default function Index() {
       setData('imageUrl', flash.uploadedImageUrl)
     }
   }, [flash?.uploadedImageUrl])
+
+  useEffect(() => {
+    if (!flash?.sharedNoteUrl) {
+      return
+    }
+
+    navigator.clipboard.writeText(flash.sharedNoteUrl).catch(() => {
+      window.prompt('Copy this share link', flash.sharedNoteUrl)
+    })
+  }, [flash?.sharedNoteUrl])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -163,6 +174,10 @@ export default function Index() {
         preserveScroll: true,
       }
     )
+  }
+
+  const shareNote = (id: number) => {
+    router.post(`/notes/${id}/share`, {}, { preserveScroll: true })
   }
 
   return (
@@ -295,6 +310,7 @@ export default function Index() {
                     viewType={viewType}
                     onTogglePin={togglePin}
                     onEdit={handleEdit}
+                    onShare={shareNote}
                   />
                 </motion.div>
               ))}

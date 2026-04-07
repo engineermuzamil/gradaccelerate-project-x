@@ -37,11 +37,15 @@ router.get('/todos', [TodosController, 'index'])
 router.get('/todos/login', ({ inertia }) => inertia.render('todos/login'))
 router.get('/todos/signup', ({ inertia }) => inertia.render('todos/signup'))
 
+// Public shared note route
+router.get('/notes/shared/:token', [NotesController, 'showShared'])
+
 // Protected notes routes
 router
   .group(() => {
     router.get('/notes', [NotesController, 'index'])
     router.get('/notes/:id', [NotesController, 'show'])
+    router.post('/notes/:id/share', [NotesController, 'share'])
     router.post('/notes/upload', [NotesController, 'uploadImage'])
     router.post('/notes', [NotesController, 'store'])
     router.put('/notes/:id', [NotesController, 'update'])

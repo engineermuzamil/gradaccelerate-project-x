@@ -20,6 +20,9 @@ export default class Note extends BaseModel {
   @column({ columnName: 'image_url' })
   declare imageUrl: string | null
 
+  @column({ columnName: 'shared_token' })
+  declare sharedToken: string | null
+
   @column({ columnName: 'user_id' })
   declare userId: number | null
 

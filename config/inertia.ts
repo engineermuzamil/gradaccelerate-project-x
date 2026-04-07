@@ -26,6 +26,7 @@ const inertiaConfig = defineConfig({
         success: ctx.session.flashMessages.get('success'),
         error: ctx.session.flashMessages.get('error'),
         uploadedImageUrl: ctx.session.flashMessages.get('uploadedImageUrl'),
+        sharedNoteUrl: ctx.session.flashMessages.get('sharedNoteUrl'),
       })),
   },
 

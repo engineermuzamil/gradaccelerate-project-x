@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import ReactMarkdown from 'react-markdown'
-import { PencilIcon, PinIcon } from 'lucide-react'
+import { PencilIcon, PinIcon, Share2Icon } from 'lucide-react'
 
 interface Note {
   id: number
@@ -19,9 +19,10 @@ interface NoteCardProps {
   viewType: 'grid' | 'list'
   onTogglePin: (id: number) => void
   onEdit: (note: Note) => void
+  onShare: (id: number) => void
 }
 
-export default function NoteCard({ note, viewType, onTogglePin, onEdit }: NoteCardProps) {
+export default function NoteCard({ note, viewType, onTogglePin, onEdit, onShare }: NoteCardProps) {
   const createdAgo = formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })
   const updatedAgo = note.updatedAt ? formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true }) : null
 
@@ -42,6 +43,13 @@ export default function NoteCard({ note, viewType, onTogglePin, onEdit }: NoteCa
           <div className="flex justify-between items-start gap-3 mb-4">
             <h2 className="text-lg font-medium text-white">{note.title}</h2>
             <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => onShare(note.id)}
+                className="h-8 w-8 rounded-lg bg-[#3A3A3C] shadow-[0_6px_18px_rgba(0,0,0,0.2)] flex items-center justify-center text-[#30D158] hover:text-[#67E08A] transition-colors duration-200"
+              >
+                <Share2Icon size={16} />
+              </button>
               <button
                 type="button"
                 onClick={() => onEdit(note)}
