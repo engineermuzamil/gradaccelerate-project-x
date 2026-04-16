@@ -1,8 +1,12 @@
-export default function GoogleAuthButton() {
+interface GoogleAuthButtonProps {
+  href?: string
+}
+
+export default function GoogleAuthButton({ href = '/google/redirect' }: GoogleAuthButtonProps) {
   return (
     <>
       <a
-        href="/google/redirect"
+        href={href}
         className="w-full mb-4 inline-flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-white text-[#1C1C1E] font-medium hover:bg-[#F2F2F7] transition-colors duration-200"
       >
         Continue with Google

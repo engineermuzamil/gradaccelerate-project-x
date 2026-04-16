@@ -21,6 +21,7 @@ router.get('/', ({ inertia }) => inertia.render('home'))
 router.get('/login', [AuthController, 'showLogin'])
 router.get('/signup', [AuthController, 'showSignup'])
 router.get('/google/redirect', [AuthController, 'googleRedirect'])
+router.get('/todos/google/redirect', [AuthController, 'googleTodoRedirect'])
 router.get('/google/callback', [AuthController, 'googleCallback'])
 
 // Session auth routes
@@ -69,7 +70,7 @@ router.group(() => {
 
 router.group(() => {
   router.post('/logout', [TodoAuthController, 'logout'])
-}).prefix('/api/auth/todos').use(middleware.auth({ guards: ['api'] }))
+}).prefix('/api/auth/todos').use(middleware.auth({ guards: ['jwt'] }))
 
 router
   .group(() => {
@@ -80,4 +81,4 @@ router
     router.delete('/:id', [TodosController, 'destroy'])
   })
   .prefix('/api/todos')
-  .use(middleware.auth({ guards: ['api'] }))
+  .use(middleware.auth({ guards: ['jwt'] }))

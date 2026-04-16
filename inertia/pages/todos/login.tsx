@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react'
 import { ArrowLeft } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import FlashMessage from '../flash-message'
+import GoogleAuthButton from '../auth/google-auth-button'
 import { setTodoToken, todoRequest } from './auth'
 
 export default function TodoLogin() {
@@ -52,6 +53,7 @@ export default function TodoLogin() {
           <FlashMessage flash={flash} />
           <div className="bg-[#2C2C2E] rounded-xl p-6 border border-[#3A3A3C]">
             <h1 className="text-3xl font-bold mb-6">Todo Login</h1>
+            <GoogleAuthButton href="/todos/google/redirect" />
             <form onSubmit={submit}>
               <input
                 type="email"

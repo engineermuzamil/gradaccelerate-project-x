@@ -52,11 +52,18 @@ export default class AuthController {
   }
 
   async googleRedirect({ ally, session, request }: HttpContext) {
+    session.put('google.authFlow', 'notes')
     session.put('redirect.previousUrl', this.getGoogleRedirectUrl(request.header('referer')))
     return ally.use('google').redirect()
   }
 
-  async googleCallback({ ally, auth, response, session }: HttpContext) {
+  async googleTodoRedirect({ ally, session }: HttpContext) {
+    session.put('google.authFlow', 'todos')
+    session.put('redirect.previousUrl', '/todos')
+    return ally.use('google').redirect()
+  }
+
+  async googleCallback({ ally, auth, response, session, inertia }: HttpContext) {
     const google = ally.use('google')
 
     if (google.accessDenied()) {
@@ -82,6 +89,13 @@ export default class AuthController {
     }
 
     const user = await this.findOrCreateGoogleUser(googleUser)
+    const authFlow = session.get('google.authFlow', 'notes')
+    session.forget('google.authFlow')
+
+    if (authFlow === 'todos') {
+      const token = await auth.use('jwt').generate(user)
+      return inertia.render('todos/google-callback', { token: token.token })
+    }
 
     await auth.use('web').login(user)
     session.flash('success', 'Logged in with Google successfully')
