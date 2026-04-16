@@ -52,12 +52,7 @@ export default class AuthController {
   }
 
   async googleRedirect({ ally, session, request }: HttpContext) {
-    const previousUrl = request.header('referer')
-    const redirectUrl = previousUrl && !['/login', '/signup'].includes(new URL(previousUrl).pathname)
-      ? previousUrl
-      : '/notes'
-
-    session.put('redirect.previousUrl', redirectUrl)
+    session.put('redirect.previousUrl', this.getGoogleRedirectUrl(request.header('referer')))
     return ally.use('google').redirect()
   }
 
@@ -86,6 +81,45 @@ export default class AuthController {
       return response.redirect('/login')
     }
 
+    const user = await this.findOrCreateGoogleUser(googleUser)
+
+    await auth.use('web').login(user)
+    session.flash('success', 'Logged in with Google successfully')
+    const previousUrl = session.get('redirect.previousUrl', '/notes')
+    session.forget('redirect.previousUrl')
+    return response.redirect(previousUrl)
+  }
+
+  private getGoogleRedirectUrl(previousUrl: string | null | undefined) {
+    if (!previousUrl) {
+      return '/notes'
+    }
+
+    let pathname = '/notes'
+
+    try {
+      pathname = new URL(previousUrl).pathname
+    } catch {
+      return '/notes'
+    }
+
+    if (['/login', '/signup'].includes(pathname)) {
+      return '/notes'
+    }
+
+    return previousUrl
+  }
+
+  private getGoogleUserName(googleUser: { name: string; nickName: string }) {
+    return googleUser.name || googleUser.nickName || 'Google User'
+  }
+
+  private async findOrCreateGoogleUser(googleUser: {
+    id: string
+    email: string
+    name: string
+    nickName: string
+  }) {
     let user = await User.findBy('googleId', googleUser.id)
 
     if (!user) {
@@ -95,23 +129,18 @@ export default class AuthController {
     if (user) {
       user.merge({
         googleId: user.googleId || googleUser.id,
-        fullName: user.fullName || googleUser.name || googleUser.nickName || 'Google User',
+        fullName: user.fullName || this.getGoogleUserName(googleUser),
       })
 
       await user.save()
-    } else {
-      user = await User.create({
-        googleId: googleUser.id,
-        email: googleUser.email,
-        fullName: googleUser.name || googleUser.nickName || 'Google User',
-        password: crypto.randomUUID(),
-      })
+      return user
     }
 
-    await auth.use('web').login(user)
-    session.flash('success', 'Logged in with Google successfully')
-    const previousUrl = session.get('redirect.previousUrl', '/notes')
-    session.forget('redirect.previousUrl')
-    return response.redirect(previousUrl)
+    return User.create({
+      googleId: googleUser.id,
+      email: googleUser.email,
+      fullName: this.getGoogleUserName(googleUser),
+      password: crypto.randomUUID(),
+    })
   }
 }
