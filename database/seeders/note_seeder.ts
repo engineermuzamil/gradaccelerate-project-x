@@ -1,9 +1,18 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import Label from '#models/label'
 import Note from '#models/note'
+import User from '#models/user'
 
 export default class NoteSeeder extends BaseSeeder {
   async run() {
+    const user = await User.firstOrCreate(
+      { email: 'notes@example.com' },
+      {
+        fullName: 'Notes User',
+        password: 'password123',
+      }
+    )
+
     const workLabel = await Label.firstOrCreate({ name: 'work' })
     const ideasLabel = await Label.firstOrCreate({ name: 'ideas' })
     const studyLabel = await Label.firstOrCreate({ name: 'study' })
@@ -33,6 +42,7 @@ export default class NoteSeeder extends BaseSeeder {
 > This is a blockquote example`,
         pinned: true,
         imageUrl: null,
+        userId: user.id,
       },
       {
         title: 'Weekend Plans',
@@ -42,6 +52,7 @@ export default class NoteSeeder extends BaseSeeder {
 - Cook dinner`,
         pinned: false,
         imageUrl: null,
+        userId: user.id,
       },
       {
         title: 'Development Tips',
@@ -62,6 +73,7 @@ export default class NoteSeeder extends BaseSeeder {
 > Always write clean and maintainable code`,
         pinned: false,
         imageUrl: null,
+        userId: user.id,
       },
     ])
 

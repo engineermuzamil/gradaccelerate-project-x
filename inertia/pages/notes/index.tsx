@@ -13,6 +13,7 @@ interface Note {
   content: string
   pinned: boolean
   imageUrl: string | null
+  sharedToken?: string | null
   labels: { id: number; name: string }[]
   createdAt: string
   updatedAt: string | null
@@ -21,10 +22,11 @@ interface Note {
 type ViewType = 'grid' | 'list'
 
 export default function Index() {
-  const { notes: initialNotes, labels: availableLabels, flash } = usePage<{
+  const { notes: initialNotes, labels: availableLabels, flash, user } = usePage<{
     notes: Note[]
     labels: { id: number; name: string }[]
-    flash?: { success?: string; error?: string; uploadedImageUrl?: string }
+    user?: { id: number; fullName: string | null; email: string }
+    flash?: { success?: string; error?: string; uploadedImageUrl?: string; sharedNoteUrl?: string }
   }>().props
   const [notes, setNotes] = useState(initialNotes)
   const [isFormVisible, setIsFormVisible] = useState(false)
@@ -57,6 +59,16 @@ export default function Index() {
       setData('imageUrl', flash.uploadedImageUrl)
     }
   }, [flash?.uploadedImageUrl])
+
+  useEffect(() => {
+    if (!flash?.sharedNoteUrl) {
+      return
+    }
+
+    navigator.clipboard.writeText(flash.sharedNoteUrl).catch(() => {
+      window.prompt('Copy this share link', flash.sharedNoteUrl)
+    })
+  }, [flash?.sharedNoteUrl])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -164,6 +176,10 @@ export default function Index() {
     )
   }
 
+  const shareNote = (id: number) => {
+    router.post(`/notes/${id}/share`, {}, { preserveScroll: true })
+  }
+
   return (
     <>
       <Head title="Notes" />
@@ -196,6 +212,19 @@ export default function Index() {
             </div>
             <div className="flex items-center gap-3">
               <ViewSwitcher currentView={viewType} onChange={setViewType} />
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  router.post('/auth/session/logout')
+                }}
+              >
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-[#2C2C2E] text-white border border-[#3A3A3C] hover:bg-[#3A3A3C] transition-colors duration-200"
+                >
+                  Logout
+                </button>
+              </form>
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
@@ -212,6 +241,11 @@ export default function Index() {
               </motion.button>
             </div>
           </motion.div>
+          {user && (
+            <p className="text-sm text-[#98989D] mb-6">
+              Logged in as {user.fullName || user.email}
+            </p>
+          )}
 
           <AnimatePresence>
             {isFormVisible && (
@@ -276,6 +310,7 @@ export default function Index() {
                     viewType={viewType}
                     onTogglePin={togglePin}
                     onEdit={handleEdit}
+                    onShare={shareNote}
                   />
                 </motion.div>
               ))}

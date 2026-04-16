@@ -1,4 +1,5 @@
 import { HttpContext } from '@adonisjs/core/http'
+import { randomBytes } from 'node:crypto'
 import Cloudinary from '#config/cloudinary'
 import Label from '#models/label'
 import Note from '#models/note'
@@ -7,8 +8,9 @@ export default class NotesController {
   /**
    * Display a list of notes
    */
-  async index({ inertia }: HttpContext) {
+  async index({ inertia, auth }: HttpContext) {
     const notes = await Note.query()
+      .where('user_id', auth.user!.id)
       .preload('labels')
       .orderBy('pinned', 'desc')
       .orderBy('created_at', 'desc')
@@ -20,8 +22,12 @@ export default class NotesController {
   /**
    * Get a specific note
    */
-  async show({ params, response }: HttpContext) {
-    const note = await Note.query().where('id', params.id).preload('labels').first()
+  async show({ params, response, auth }: HttpContext) {
+    const note = await Note.query()
+      .where('id', params.id)
+      .where('user_id', auth.user!.id)
+      .preload('labels')
+      .first()
     if (!note) {
       return response.notFound({ message: 'Note not found' })
     }
@@ -29,10 +35,20 @@ export default class NotesController {
     return response.json(note)
   }
 
+  async showShared({ params, inertia, response }: HttpContext) {
+    const note = await Note.query().where('shared_token', params.token).preload('labels').first()
+
+    if (!note) {
+      return response.notFound('Shared note not found')
+    }
+
+    return inertia.render('notes/shared', { note })
+  }
+
   /**
    * Store a new note
    */
-  async store({ request, response, session }: HttpContext) {
+  async store({ request, response, session, auth }: HttpContext) {
     const data = request.only(['title', 'content', 'pinned', 'imageUrl'])
 
     const note = await Note.create({
@@ -40,6 +56,7 @@ export default class NotesController {
       content: data.content,
       pinned: Boolean(data.pinned),
       imageUrl: data.imageUrl || null,
+      userId: auth.user!.id,
     })
     await this.syncLabels(note, request.input('labels', []))
 
@@ -50,8 +67,11 @@ export default class NotesController {
   /**
    * Update a note
    */
-  async update({ params, request, response, session }: HttpContext) {
-    const note = await Note.find(params.id)
+  async update({ params, request, response, session, auth }: HttpContext) {
+    const note = await Note.query()
+      .where('id', params.id)
+      .where('user_id', auth.user!.id)
+      .first()
     if (!note) {
       return response.notFound({ message: 'Note not found' })
     }
@@ -68,6 +88,30 @@ export default class NotesController {
     await this.syncLabels(note, request.input('labels', []))
 
     session.flash('success', 'Note updated successfully')
+    return response.redirect().back()
+  }
+
+  async share({ params, request, response, session, auth }: HttpContext) {
+    const note = await Note.query()
+      .where('id', params.id)
+      .where('user_id', auth.user!.id)
+      .first()
+
+    if (!note) {
+      return response.notFound({ message: 'Note not found' })
+    }
+
+    if (!note.sharedToken) {
+      note.sharedToken = randomBytes(16).toString('hex')
+      await note.save()
+    }
+
+    const shareUrl = request
+      .completeUrl()
+      .replace(`/notes/${note.id}/share`, `/notes/shared/${note.sharedToken}`)
+
+    session.flash('sharedNoteUrl', shareUrl)
+    session.flash('success', 'Share link is ready')
     return response.redirect().back()
   }
 
@@ -111,8 +155,11 @@ export default class NotesController {
   /**
    * Delete a note
    */
-  async destroy({ params, response, session }: HttpContext) {
-    const note = await Note.find(params.id)
+  async destroy({ params, response, session, auth }: HttpContext) {
+    const note = await Note.query()
+      .where('id', params.id)
+      .where('user_id', auth.user!.id)
+      .first()
     if (!note) {
       return response.notFound({ message: 'Note not found' })
     }

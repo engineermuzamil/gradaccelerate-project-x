@@ -1,16 +1,21 @@
 import { defineConfig } from '@adonisjs/auth'
 import { sessionGuard, sessionUserProvider } from '@adonisjs/auth/session'
 import type { InferAuthenticators, InferAuthEvents, Authenticators } from '@adonisjs/auth/types'
+import env from '#start/env'
+import { JwtGuard } from '../app/auth/jwt/guard.js'
+
+const userProvider = sessionUserProvider({
+  model: () => import('#models/user'),
+})
 
 const authConfig = defineConfig({
   default: 'web',
   guards: {
     web: sessionGuard({
       useRememberMeTokens: false,
-      provider: sessionUserProvider({
-        model: () => import('#models/user'),
-      }),
+      provider: userProvider,
     }),
+    jwt: (ctx) => new JwtGuard(ctx, userProvider, { secret: env.get('APP_KEY') }),
   },
 })
 

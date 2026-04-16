@@ -1,11 +1,12 @@
-import { Head, useForm, Link, router, usePage } from '@inertiajs/react'
+import { Head, Link, usePage } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { PlusIcon, XIcon, ArrowLeft } from 'lucide-react'
 import FlashMessage from '../flash-message'
 import TodoCard from './todo-card'
 import TodoForm from './todo-form'
 import ViewSwitcher from './view-switcher'
+import { clearTodoToken, getTodoToken, todoRequest } from './auth'
 
 interface Label {
   id: number
@@ -25,49 +26,93 @@ interface Todo {
 type ViewType = 'grid' | 'list'
 
 export default function Todos() {
-  const { todos: initialTodos, labels: availableLabels, flash } = usePage<{ todos: Todo[]; labels: Label[]; flash?: { success?: string; error?: string } }>().props
-  const [todos, setTodos] = useState(initialTodos)
+  const { labels: availableLabels } = usePage<{ todos: Todo[]; labels: Label[] }>().props
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [flash, setFlash] = useState<{ success?: string; error?: string }>({})
   const [isFormVisible, setIsFormVisible] = useState(false)
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
   const [viewType, setViewType] = useState<ViewType>('grid')
-  const { data, setData, post, put, processing, reset } = useForm({
+  const [processing, setProcessing] = useState(false)
+  const [data, setFormData] = useState({
     title: '',
     description: '',
-    isCompleted: false as boolean,
+    isCompleted: false,
     labels: [] as number[],
   })
 
   const sortTodos = (items: Todo[]) =>
-    [...items].sort((a, b) => Number(a.isCompleted) - Number(b.isCompleted) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    [...items].sort(
+      (a, b) =>
+        Number(a.isCompleted) - Number(b.isCompleted) ||
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+
+  const setData = (field: string, value: string | boolean | number[]) => {
+    setFormData((current) => ({ ...current, [field]: value }))
+  }
+
+  const loadTodos = async () => {
+    try {
+      const todoItems = await todoRequest('/api/todos')
+      setTodos(sortTodos(todoItems))
+    } catch (error) {
+      clearTodoToken()
+      window.location.href = '/todos/login'
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
-    setTodos(sortTodos(initialTodos))
-  }, [initialTodos])
+    const token = getTodoToken()
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (editingTodoId !== null) {
-      put(`/todos/${editingTodoId}`, {
-        onSuccess: () => {
-          resetForm()
-        },
-      })
+    if (!token) {
+      window.location.href = '/todos/login'
       return
     }
 
-    post('/todos', {
-      onSuccess: () => {
-        resetForm()
-      },
-    })
-  }
+    loadTodos()
+  }, [])
 
   const resetForm = () => {
-    reset()
-    setData('labels', [])
+    setFormData({
+      title: '',
+      description: '',
+      isCompleted: false,
+      labels: [],
+    })
     setEditingTodoId(null)
     setIsFormVisible(false)
+  }
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    setProcessing(true)
+    setFlash({})
+
+    try {
+      if (editingTodoId !== null) {
+        await todoRequest(`/api/todos/${editingTodoId}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        })
+        setFlash({ success: 'Todo updated successfully' })
+      } else {
+        await todoRequest('/api/todos', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        })
+        setFlash({ success: 'Todo created successfully' })
+      }
+
+      resetForm()
+      await loadTodos()
+    } catch (error) {
+      setFlash({ error: error instanceof Error ? error.message : 'Todo request failed' })
+    } finally {
+      setProcessing(false)
+    }
   }
 
   const handleEdit = (todo: Todo) => {
@@ -79,30 +124,36 @@ export default function Todos() {
     setIsFormVisible(true)
   }
 
-  const handleDelete = (id: number) => {
-    setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== id))
-    router.delete(`/todos/${id}`, {
-      preserveScroll: true,
-    })
+  const handleDelete = async (id: number) => {
+    setFlash({})
+
+    try {
+      await todoRequest(`/api/todos/${id}`, { method: 'DELETE' })
+      setFlash({ success: 'Todo deleted successfully' })
+      await loadTodos()
+    } catch (error) {
+      setFlash({ error: error instanceof Error ? error.message : 'Todo delete failed' })
+    }
   }
 
-  const handleToggleComplete = (todo: Todo) => {
-    const updatedTodo = { ...todo, isCompleted: !todo.isCompleted }
+  const handleToggleComplete = async (todo: Todo) => {
+    setFlash({})
 
-    setTodos((currentTodos) =>
-      sortTodos(currentTodos.map((item) => (item.id === todo.id ? updatedTodo : item)))
-    )
+    try {
+      await todoRequest(`/api/todos/${todo.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: todo.title,
+          description: todo.description,
+          isCompleted: !todo.isCompleted,
+          labels: todo.labels.map((label) => label.id),
+        }),
+      })
 
-    router.put(
-      `/todos/${todo.id}`,
-      {
-        title: todo.title,
-        description: todo.description,
-        isCompleted: updatedTodo.isCompleted,
-        labels: todo.labels.map((label) => label.id),
-      },
-      { preserveScroll: true }
-    )
+      await loadTodos()
+    } catch (error) {
+      setFlash({ error: error instanceof Error ? error.message : 'Todo update failed' })
+    }
   }
 
   const toggleForm = () => {
@@ -114,9 +165,19 @@ export default function Todos() {
     setIsFormVisible(true)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-      submit(e as any)
+      submit(e as never)
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await todoRequest('/api/auth/todos/logout', { method: 'POST' })
+    } catch {
+    } finally {
+      clearTodoToken()
+      window.location.href = '/todos/login'
     }
   }
 
@@ -139,6 +200,13 @@ export default function Todos() {
             </div>
             <div className="flex items-center gap-3">
               <ViewSwitcher currentView={viewType} onChange={setViewType} />
+              <button
+                type="button"
+                onClick={logout}
+                className="px-4 py-2 rounded-lg bg-[#2C2C2E] text-white border border-[#3A3A3C] hover:bg-[#3A3A3C] transition-colors duration-200"
+              >
+                Logout
+              </button>
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={toggleForm}
@@ -171,32 +239,36 @@ export default function Todos() {
             )}
           </AnimatePresence>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className={viewType === 'grid' ? 'columns-1 md:columns-2 gap-4' : 'flex flex-col gap-3'}
-          >
-            <AnimatePresence>
-              {todos.map((todo, index) => (
-                <motion.div
-                  key={todo.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0, transition: { delay: index * 0.05 } }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className={viewType === 'grid' ? 'mb-4 break-inside-avoid' : 'w-full'}
-                >
-                  <TodoCard
-                    todo={todo}
-                    viewType={viewType}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onToggleComplete={handleToggleComplete}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
+          {isLoading ? (
+            <div className="text-[#98989D]">Loading todos...</div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className={viewType === 'grid' ? 'columns-1 md:columns-2 gap-4' : 'flex flex-col gap-3'}
+            >
+              <AnimatePresence>
+                {todos.map((todo, index) => (
+                  <motion.div
+                    key={todo.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0, transition: { delay: index * 0.05 } }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className={viewType === 'grid' ? 'mb-4 break-inside-avoid' : 'w-full'}
+                  >
+                    <TodoCard
+                      todo={todo}
+                      viewType={viewType}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onToggleComplete={handleToggleComplete}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
         </div>
       </div>
     </>

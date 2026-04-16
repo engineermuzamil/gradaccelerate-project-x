@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, manyToMany } from '@adonisjs/lucid/orm'
-import type { ManyToMany } from '@adonisjs/lucid/types/relations'
+import { BaseModel, belongsTo, column, manyToMany } from '@adonisjs/lucid/orm'
+import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import Label from '#models/label'
+import User from '#models/user'
 
 export default class Note extends BaseModel {
   @column({ isPrimary: true })
@@ -18,6 +19,15 @@ export default class Note extends BaseModel {
 
   @column({ columnName: 'image_url' })
   declare imageUrl: string | null
+
+  @column({ columnName: 'shared_token' })
+  declare sharedToken: string | null
+
+  @column({ columnName: 'user_id' })
+  declare userId: number | null
+
+  @belongsTo(() => User)
+  declare user: BelongsTo<typeof User>
 
   @manyToMany(() => Label, {
     pivotTable: 'note_labels',
