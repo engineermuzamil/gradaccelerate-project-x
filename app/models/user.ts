@@ -25,6 +25,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   declare email: string
 
+  @column({ columnName: 'google_id' })
+  declare googleId: string | null
+
   @column({ serializeAs: null })
   declare password: string
 

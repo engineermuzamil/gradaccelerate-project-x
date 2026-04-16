@@ -20,6 +20,8 @@ router.get('/', ({ inertia }) => inertia.render('home'))
 // Auth pages
 router.get('/login', [AuthController, 'showLogin'])
 router.get('/signup', [AuthController, 'showSignup'])
+router.get('/google/redirect', [AuthController, 'googleRedirect'])
+router.get('/google/callback', [AuthController, 'googleCallback'])
 
 // Session auth routes
 router.group(() => {
