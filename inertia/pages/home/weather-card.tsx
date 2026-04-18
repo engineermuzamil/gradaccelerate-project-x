@@ -8,6 +8,73 @@ interface WeatherData {
   iconUrl: string | null
 }
 
+/**
+ * Gets user's location using browser Geolocation API
+ */
+async function getLocation(): Promise<{ latitude: number; longitude: number }> {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        })
+      },
+      (error) => reject(error),
+      { timeout: 10000 }
+    )
+  })
+}
+
+/**
+ * Gets user's location using IP-based geolocation as fallback
+ */
+async function getLocationFromIP(): Promise<{ latitude: number; longitude: number }> {
+  const response = await fetch('https://ipinfo.io/json')
+  const data = await response.json()
+  const [latitude, longitude] = data.loc.split(',').map(Number)
+  
+  return { latitude, longitude }
+}
+
+/**
+ * Gets user's location with fallback: browser first, then IP
+ */
+async function getLocationWithFallback(): Promise<{ latitude: number; longitude: number }> {
+  try {
+    return await getLocation()
+  } catch {
+    return await getLocationFromIP()
+  }
+}
+
+/**
+ * Fetches weather data from our backend API
+ * Takes: latitude and longitude coordinates
+ * Returns: Weather data object
+ * Throws: Error if API request fails
+ */
+async function fetchWeather(latitude: number, longitude: number): Promise<WeatherData> {
+  console.log('Fetching weather...')
+  
+  const response = await fetch(
+    `/api/weather/current?lat=${latitude}&lon=${longitude}`,
+    { credentials: 'same-origin' }
+  )
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch weather')
+  }
+
+  const data = await response.json()
+  console.log('Weather data:', data)
+  
+  return data as WeatherData
+}
+
+/**
+ * Main component - displays weather card with location-based data
+ */
 export default function WeatherCard() {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -18,34 +85,18 @@ export default function WeatherCard() {
 
     const loadWeather = async () => {
       try {
-        // Get location from browser
-        console.log('Trying browser geolocation...')
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 10000,
-          })
-        })
+        // Step 1: Get user location (with IP fallback if browser geolocation fails)
+        const location = await getLocationWithFallback()
 
-        const { latitude, longitude } = position.coords
-        console.log('Got browser location:', latitude, longitude)
+        // Step 2: Fetch weather for that location
+        const weatherData = await fetchWeather(location.latitude, location.longitude)
 
-        // Fetch weather from our API
-        const response = await fetch(
-          `/api/weather/current?lat=${latitude}&lon=${longitude}`,
-          { credentials: 'same-origin' }
-        )
-
-        if (!response.ok) throw new Error('Failed to fetch weather')
-
-        const data = await response.json()
-        console.log('Weather data:', data)
-        
+        // Step 3: Update state (check if component is still mounted)
         if (!cancelled) {
-          setWeather(data)
+          setWeather(weatherData)
           setLoading(false)
         }
       } catch (err) {
-        console.log('Error:', err)
         if (!cancelled) {
           setError('Weather data is unavailable right now.')
           setLoading(false)
@@ -54,6 +105,8 @@ export default function WeatherCard() {
     }
 
     loadWeather()
+    
+    // Cleanup: prevent state updates if component unmounts
     return () => {
       cancelled = true
     }
