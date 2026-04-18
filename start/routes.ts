@@ -12,6 +12,7 @@ const ProjectsController = () => import('#controllers/projects_controller')
 const TodosController = () => import('#controllers/todos_controller')
 const AuthController = () => import('#controllers/auth_controller')
 const TodoAuthController = () => import('#controllers/todo_auth_controller')
+const WeatherController = () => import('#controllers/weather_controller')
 import router from '@adonisjs/core/services/router'
 import { middleware } from './kernel.js'
 
@@ -23,6 +24,7 @@ router.get('/signup', [AuthController, 'showSignup'])
 router.get('/google/redirect', [AuthController, 'googleRedirect'])
 router.get('/todos/google/redirect', [AuthController, 'googleTodoRedirect'])
 router.get('/google/callback', [AuthController, 'googleCallback'])
+router.get('/api/weather/current', [WeatherController, 'current'])
 
 // Session auth routes
 router.group(() => {
