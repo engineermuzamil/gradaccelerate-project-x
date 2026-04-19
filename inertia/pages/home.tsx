@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react'
 import { Link, usePage } from '@inertiajs/react'
+import WeatherCard from './home/weather-card.js'
 
 export default function Home() {
   const { user } = usePage<{ user?: { id: number; fullName: string | null; email: string } | null }>().props
@@ -28,6 +29,8 @@ export default function Home() {
 
             {/* Cards Container */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
+              <WeatherCard />
+
               {/* Notes Card */}
               <Link href="/notes" className="block">
                 <div className="bg-[#2C2C2E] p-6 rounded-xl hover:bg-[#3C3C3E] transition-colors duration-200">
