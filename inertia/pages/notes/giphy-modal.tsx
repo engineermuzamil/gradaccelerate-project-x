@@ -71,10 +71,10 @@ export default function GiphyModal({ isOpen, onClose, onSelectGif }: GiphyModalP
             onClick={onClose}
           />
           <motion.div
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#2C2C2E] rounded-xl p-6 w-[90%] max-w-2xl max-h-[80vh] overflow-y-auto z-50 border border-[#3A3A3C]"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed top-1/2 left-1/2 bg-[#2C2C2E] rounded-xl p-6 w-[90%] max-w-2xl max-h-[80vh] overflow-y-auto z-50 border border-[#3A3A3C]"
+            initial={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
+            animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
+            exit={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
           >
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-white">Search GIFs</h2>
