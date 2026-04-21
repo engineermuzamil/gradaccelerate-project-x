@@ -14,6 +14,12 @@ export default class Todo extends BaseModel {
   @column()
   declare description: string | null
 
+  @column()
+  declare priority: 'low' | 'medium' | 'high'
+
+  @column()
+  declare status: 'pending' | 'in-progress' | 'completed'
+
   @column({ columnName: 'is_completed' })
   declare isCompleted: boolean
 

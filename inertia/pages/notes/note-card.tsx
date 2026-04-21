@@ -2,6 +2,9 @@ import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import ReactMarkdown from 'react-markdown'
 import { PencilIcon, PinIcon, Share2Icon } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface Note {
   id: number
@@ -28,46 +31,52 @@ export default function NoteCard({ note, viewType, onTogglePin, onEdit, onShare 
 
   return (
     <motion.div
-      className={`relative overflow-hidden backdrop-blur-sm bg-[#2C2C2E]/80 border border-[#3A3A3C] ${
-        viewType === 'grid' ? 'rounded-xl' : 'rounded-lg'
-      }`}
-      style={{
-        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-      }}
       whileHover={{ y: -2, scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.2 }}
     >
-      <div className={`p-5 ${viewType === 'list' ? 'flex items-center gap-4' : ''}`}>
-        <div className={viewType === 'list' ? 'flex-1' : ''}>
+      <Card
+        className={`relative overflow-hidden backdrop-blur-sm bg-[#2C2C2E]/80 ${
+          viewType === 'grid' ? 'rounded-xl' : 'rounded-lg'
+        }`}
+        style={{ boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)' }}
+      >
+        <CardContent className={`p-5 ${viewType === 'list' ? 'flex items-center gap-4' : ''}`}>
+          <div className={viewType === 'list' ? 'flex-1' : ''}>
           <div className="flex justify-between items-start gap-3 mb-4">
             <h2 className="text-lg font-medium text-white">{note.title}</h2>
-            <div className="flex items-center gap-3">
-              <button
+            <div className="flex items-center gap-2">
+              <Button
                 type="button"
                 onClick={() => onShare(note.id)}
-                className="h-8 w-8 rounded-lg bg-[#3A3A3C] shadow-[0_6px_18px_rgba(0,0,0,0.2)] flex items-center justify-center text-[#30D158] hover:text-[#67E08A] transition-colors duration-200"
+                variant="secondary"
+                size="icon"
+                className="text-[#30D158] hover:text-[#67E08A]"
               >
                 <Share2Icon size={16} />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => onEdit(note)}
-                className="h-8 w-8 rounded-lg bg-[#3A3A3C] shadow-[0_6px_18px_rgba(0,0,0,0.2)] flex items-center justify-center text-[#0A84FF] hover:text-[#3B9BFF] transition-colors duration-200"
+                variant="secondary"
+                size="icon"
+                className="text-[#0A84FF] hover:text-[#3B9BFF]"
               >
                 <PencilIcon size={16} />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => onTogglePin(note.id)}
-                className={`h-8 w-8 rounded-lg shadow-[0_6px_18px_rgba(0,0,0,0.2)] flex items-center justify-center transition-colors duration-200 ${
+                variant="secondary"
+                size="icon"
+                className={`transition-colors duration-200 ${
                   note.pinned
                     ? 'bg-[#0A84FF]/20 text-[#0A84FF]'
                     : 'bg-[#3A3A3C] text-[#8E8E93] hover:text-white'
                 }`}
               >
                 <PinIcon size={18} className={note.pinned ? 'fill-current' : ''} />
-              </button>
+              </Button>
             </div>
           </div>
           <div className={`text-[#E5E5EA] text-sm ${viewType === 'list' ? 'line-clamp-4' : ''}`}>
@@ -106,9 +115,9 @@ export default function NoteCard({ note, viewType, onTogglePin, onEdit, onShare 
           {note.labels.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
               {note.labels.map((label) => (
-                <span key={label.id} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#0A84FF]/15 text-[#6FB2FF] border border-[#0A84FF]/30">
+                <Badge key={label.id}>
                   {label.name}
-                </span>
+                </Badge>
               ))}
             </div>
           )}
@@ -116,8 +125,9 @@ export default function NoteCard({ note, viewType, onTogglePin, onEdit, onShare 
             <p>Created {createdAgo}</p>
             {updatedAgo && <p>Updated {updatedAgo}</p>}
           </div>
-        </div>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   )
-} 
+}

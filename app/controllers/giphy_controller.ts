@@ -20,7 +20,6 @@ export default class GiphyController {
 
     try {
       const url = `https://api.giphy.com/v1/gifs/search?api_key=${apiConfig.giphyApiKey}&q=${encodeURIComponent(query)}&limit=12&offset=0&rating=g&lang=en`
-
       const giphyData = await fetch(url).then(r => r.json())
 
       if (!giphyData.data) {
