@@ -2,6 +2,10 @@ import { Head, useForm, Link, router, usePage } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { PlusIcon, XIcon, ArrowLeft } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useNotesFiltersStore } from '@/stores/notes-filters'
 import FlashMessage from '../flash-message'
 import NoteCard from './note-card'
 import NoteForm from './note-form'
@@ -33,6 +37,12 @@ export default function Index() {
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null)
   const [viewType, setViewType] = useState<ViewType>('grid')
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const {
+    searchQuery,
+    selectedLabelIds,
+    setSearchQuery,
+    toggleLabelId,
+  } = useNotesFiltersStore()
   const { data, setData, post, put, processing, reset } = useForm({
     title: '',
     content: '',
@@ -180,6 +190,20 @@ export default function Index() {
     router.post(`/notes/${id}/share`, {}, { preserveScroll: true })
   }
 
+  const filteredNotes = notes.filter((note) => {
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+    const matchesSearch =
+      !normalizedQuery ||
+      note.title.toLowerCase().includes(normalizedQuery) ||
+      note.content.toLowerCase().includes(normalizedQuery)
+
+    const matchesLabels =
+      selectedLabelIds.length === 0 ||
+      selectedLabelIds.every((labelId) => note.labels.some((label) => label.id === labelId))
+
+    return matchesSearch && matchesLabels
+  })
+
   return (
     <>
       <Head title="Notes" />
@@ -192,12 +216,11 @@ export default function Index() {
             className="flex justify-between items-center mb-8"
           >
             <div className="flex items-center gap-3">
-              <Link 
-                href="/" 
-                className="p-2 hover:bg-[#2C2C2E] rounded-full transition-colors duration-200"
-              >
-                <ArrowLeft size={24} />
-              </Link>
+              <Button asChild type="button" variant="ghost" size="icon">
+                <Link href="/">
+                  <ArrowLeft size={24} />
+                </Link>
+              </Button>
               <svg width="32" height="32" viewBox="0 0 188 354" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8">
                 <path d="M69.8447 1.82232C87.701 1.82232 109.843 1.2517 127.692 0.933476L166.846 0.247858C173.654 0.163964 180.756 -0.346625 187.5 0.401914C187.471 2.1514 186.276 3.12195 185.245 4.48958C168.635 31.5433 149.663 57.6453 131.887 83.9635C125.465 93.4754 118.291 102.926 112.571 112.87C113.996 113.818 115.199 113.894 116.845 114.129C122.086 112.258 175.336 112.98 184.257 113.504L173.06 128.764L111.361 210.908C106.357 217.569 96.2051 233.408 90.8141 238.123L85.6237 245.276C83.254 248.378 80.963 251.857 78.2354 254.634C61.9276 278.442 50.5433 291.46 35.244 316.629C28.7568 325.064 14.7477 348.616 5.72741 353.296C4.47767 353.945 1.80906 352.966 1.00125 351.988C-0.241596 350.484 -0.126339 348.336 0.278159 346.542C0.978659 343.451 2.42368 340.794 3.49196 337.842C22.6108 284.507 44.2408 230.055 66.8593 178.063C59.7859 178.032 52.7126 177.961 45.6392 177.849C33.2465 178.311 20.7107 177.936 8.29798 177.937C11.1224 153.688 60.4958 26.7594 69.8447 1.82232Z" fill="url(#paint0_linear_99_30)"/>
                 <defs>
@@ -218,14 +241,11 @@ export default function Index() {
                   router.post('/auth/session/logout')
                 }}
               >
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#2C2C2E] text-white border border-[#3A3A3C] hover:bg-[#3A3A3C] transition-colors duration-200"
-                >
+                <Button type="submit" variant="secondary">
                   Logout
-                </button>
+                </Button>
               </form>
-              <motion.button
+              <motion.div
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   if (isFormVisible) {
@@ -235,10 +255,11 @@ export default function Index() {
 
                   setIsFormVisible(true)
                 }}
-                className="bg-[#0A84FF] text-white p-3 rounded-full shadow-lg hover:bg-[#0A74FF] transition-colors duration-200"
               >
-                {isFormVisible ? <XIcon size={20} /> : <PlusIcon size={20} />}
-              </motion.button>
+                <Button type="button" size="icon" className="rounded-full shadow-lg">
+                  {isFormVisible ? <XIcon size={20} /> : <PlusIcon size={20} />}
+                </Button>
+              </motion.div>
             </div>
           </motion.div>
           {user && (
@@ -246,6 +267,33 @@ export default function Index() {
               Logged in as {user.fullName || user.email}
             </p>
           )}
+
+          <div className="mb-6 space-y-4">
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search notes by title or content"
+            />
+
+            {availableLabels.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {availableLabels.map((label) => {
+                  const isSelected = selectedLabelIds.includes(label.id)
+
+                  return (
+                    <button key={label.id} type="button" onClick={() => toggleLabelId(label.id)}>
+                      <Badge
+                        variant={isSelected ? 'default' : 'secondary'}
+                        className="cursor-pointer px-3 py-1.5"
+                      >
+                        {label.name}
+                      </Badge>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
           <AnimatePresence>
             {isFormVisible && (
@@ -293,7 +341,7 @@ export default function Index() {
             }
           >
             <AnimatePresence>
-              {notes.map((note, index) => (
+              {filteredNotes.map((note, index) => (
                 <motion.div
                   key={note.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -316,6 +364,10 @@ export default function Index() {
               ))}
             </AnimatePresence>
           </motion.div>
+
+          {filteredNotes.length === 0 && (
+            <div className="text-[#98989D] mt-8">No notes match your search or selected labels.</div>
+          )}
         </div>
       </div>
     </>

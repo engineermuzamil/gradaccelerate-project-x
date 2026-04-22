@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search, X } from 'lucide-react'
 
 interface GIF {
@@ -10,19 +10,36 @@ interface GIF {
 
 interface GiphyModalProps {
   isOpen: boolean
+  initialQuery?: string
   onClose: () => void
   onSelectGif: (gifUrl: string) => void
 }
 
-export default function GiphyModal({ isOpen, onClose, onSelectGif }: GiphyModalProps) {
+export default function GiphyModal({ isOpen, initialQuery = '', onClose, onSelectGif }: GiphyModalProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [gifs, setGifs] = useState<GIF[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    setSearchQuery(initialQuery)
+
+    if (initialQuery.trim()) {
+      searchGifs(initialQuery)
+    } else {
+      setGifs([])
+      setError('')
+    }
+  }, [isOpen, initialQuery])
+
   const searchGifs = async (query: string) => {
     if (!query.trim()) {
       setGifs([])
+      setError('')
       return
     }
 
@@ -34,7 +51,7 @@ export default function GiphyModal({ isOpen, onClose, onSelectGif }: GiphyModalP
       const data = await response.json()
 
       if (!response.ok) {
-        setError('Failed to search GIFs')
+        setError(data.message || 'Failed to search GIFs')
         return
       }
 
@@ -128,6 +145,7 @@ export default function GiphyModal({ isOpen, onClose, onSelectGif }: GiphyModalP
               {gifs.map((gif) => (
                 <motion.button
                   key={gif.id}
+                  type="button"
                   onClick={() => handleSelectGif(gif.url)}
                   className="relative group rounded-lg overflow-hidden"
                   whileHover={{ scale: 1.05 }}

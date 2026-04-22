@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { PlusIcon, XIcon, ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import FlashMessage from '../flash-message'
 import TodoCard from './todo-card'
 import TodoForm from './todo-form'
@@ -17,6 +18,8 @@ interface Todo {
   id: number
   title: string
   description: string | null
+  priority: 'low' | 'medium' | 'high'
+  status: 'pending' | 'in-progress' | 'completed'
   isCompleted: boolean
   createdAt: string
   updatedAt: string | null
@@ -37,6 +40,8 @@ export default function Todos() {
   const [data, setFormData] = useState({
     title: '',
     description: '',
+    priority: 'medium' as 'low' | 'medium' | 'high',
+    status: 'pending' as 'pending' | 'in-progress' | 'completed',
     isCompleted: false,
     labels: [] as number[],
   })
@@ -48,7 +53,10 @@ export default function Todos() {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
 
-  const setData = (field: string, value: string | boolean | number[]) => {
+  const setData = (
+    field: string,
+    value: string | boolean | number[]
+  ) => {
     setFormData((current) => ({ ...current, [field]: value }))
   }
 
@@ -79,6 +87,8 @@ export default function Todos() {
     setFormData({
       title: '',
       description: '',
+      priority: 'medium',
+      status: 'pending',
       isCompleted: false,
       labels: [],
     })
@@ -119,6 +129,8 @@ export default function Todos() {
     setEditingTodoId(todo.id)
     setData('title', todo.title)
     setData('description', todo.description || '')
+    setData('priority', todo.priority)
+    setData('status', todo.status)
     setData('isCompleted', todo.isCompleted)
     setData('labels', todo.labels.map((label) => label.id))
     setIsFormVisible(true)
@@ -145,6 +157,8 @@ export default function Todos() {
         body: JSON.stringify({
           title: todo.title,
           description: todo.description,
+          priority: todo.priority,
+          status: todo.status,
           isCompleted: !todo.isCompleted,
           labels: todo.labels.map((label) => label.id),
         }),
@@ -193,27 +207,25 @@ export default function Todos() {
             className="flex justify-between items-center mb-8"
           >
             <div className="flex items-center gap-3">
-              <Link href="/" className="p-2 hover:bg-[#2C2C2E] rounded-full transition-colors duration-200">
-                <ArrowLeft size={24} />
-              </Link>
+              <Button asChild type="button" variant="ghost" size="icon">
+                <Link href="/">
+                  <ArrowLeft size={24} />
+                </Link>
+              </Button>
               <h1 className="text-3xl font-bold">Todos</h1>
             </div>
             <div className="flex items-center gap-3">
               <ViewSwitcher currentView={viewType} onChange={setViewType} />
-              <button
-                type="button"
-                onClick={logout}
-                className="px-4 py-2 rounded-lg bg-[#2C2C2E] text-white border border-[#3A3A3C] hover:bg-[#3A3A3C] transition-colors duration-200"
-              >
+              <Button type="button" variant="secondary" onClick={logout}>
                 Logout
-              </button>
-              <motion.button
+              </Button>
+              <motion.div
                 whileTap={{ scale: 0.95 }}
-                onClick={toggleForm}
-                className="bg-[#0A84FF] text-white p-3 rounded-full shadow-lg hover:bg-[#0A74FF] transition-colors duration-200"
               >
-                {isFormVisible ? <XIcon size={20} /> : <PlusIcon size={20} />}
-              </motion.button>
+                <Button type="button" size="icon" onClick={toggleForm} className="rounded-full shadow-lg">
+                  {isFormVisible ? <XIcon size={20} /> : <PlusIcon size={20} />}
+                </Button>
+              </motion.div>
             </div>
           </motion.div>
 

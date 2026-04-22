@@ -38,6 +38,8 @@ export default class TodosController {
     const todo = await Todo.create({
       title: request.input('title'),
       description: request.input('description'),
+      priority: request.input('priority', 'medium'),
+      status: request.input('status', 'pending'),
       isCompleted: Boolean(request.input('isCompleted', false)),
       userId: auth.user!.id,
     })
@@ -67,6 +69,8 @@ export default class TodosController {
       .merge({
         title: request.input('title', todo.title),
         description: request.input('description', todo.description),
+        priority: request.input('priority', todo.priority),
+        status: request.input('status', todo.status),
         isCompleted: Boolean(request.input('isCompleted', todo.isCompleted)),
       })
       .save()
